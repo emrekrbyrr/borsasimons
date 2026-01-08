@@ -456,6 +456,112 @@ def find_peaks_troughs(prices: np.ndarray, dates: List[str]) -> List[PeakTroughP
     
     return points[:12]  # Limit to 12 points max
 
+
+def find_peaks_troughs_with_criteria(prices: np.ndarray, dates: List[str], criteria: PatternCriteria) -> List[PeakTroughPoint]:
+    """
+    Kullanıcının belirlediği kriterlere göre dip ve tepe noktalarını bul.
+    """
+    if len(prices) < 10:
+        return []
+    
+    points = []
+    window = 5
+    
+    # Find local minima and maxima
+    local_mins = []
+    local_maxs = []
+    
+    for i in range(window, len(prices) - window):
+        is_min = all(prices[i] <= prices[i-j] for j in range(1, window+1)) and \
+                 all(prices[i] <= prices[i+j] for j in range(1, window+1))
+        is_max = all(prices[i] >= prices[i-j] for j in range(1, window+1)) and \
+                 all(prices[i] >= prices[i+j] for j in range(1, window+1))
+        
+        if is_min:
+            local_mins.append((i, prices[i], dates[i]))
+        if is_max:
+            local_maxs.append((i, prices[i], dates[i]))
+    
+    # Kriterler listesi
+    rise_criteria = [
+        (criteria.rise_1_min, criteria.rise_1_max),
+        (criteria.rise_2_min, criteria.rise_2_max),
+        (criteria.rise_3_min, criteria.rise_3_max),
+        (criteria.rise_4_min, criteria.rise_4_max),
+        (criteria.rise_5_min, criteria.rise_5_max),
+    ]
+    
+    drop_criteria = [
+        (criteria.drop_1_min, criteria.drop_1_max),
+        (criteria.drop_2_min, criteria.drop_2_max),
+        (criteria.drop_3_min, criteria.drop_3_max),
+        (criteria.drop_4_min, criteria.drop_4_max),
+        (criteria.drop_5_min, criteria.drop_5_max),
+    ]
+    
+    dip_count = 0
+    peak_count = 0
+    last_dip = None
+    last_peak = None
+    
+    all_points = sorted(local_mins + local_maxs, key=lambda x: x[0])
+    
+    for idx, price, date in all_points:
+        is_dip = (idx, price, date) in local_mins
+        
+        if is_dip:
+            if last_peak is not None and dip_count < 6:
+                drop_pct = ((last_peak[1] - price) / last_peak[1]) * 100
+                
+                # Hangi düşüş kriterini kontrol edeceğiz
+                criterion_idx = min(dip_count, len(drop_criteria) - 1)
+                min_drop, max_drop = drop_criteria[criterion_idx]
+                
+                if min_drop <= drop_pct <= max_drop:
+                    dip_count += 1
+                    points.append(PeakTroughPoint(
+                        point_type="dip",
+                        point_number=dip_count,
+                        date=date,
+                        price=round(price, 2),
+                        percentage_change=round(-drop_pct, 2)
+                    ))
+                    last_dip = (idx, price, date)
+            elif last_dip is None and dip_count == 0:
+                # İlk dip noktası
+                dip_count += 1
+                points.append(PeakTroughPoint(
+                    point_type="dip",
+                    point_number=dip_count,
+                    date=date,
+                    price=round(price, 2),
+                    percentage_change=None
+                ))
+                last_dip = (idx, price, date)
+        else:
+            # Tepe noktası
+            if last_dip is not None and peak_count < 5:
+                rise_pct = ((price - last_dip[1]) / last_dip[1]) * 100
+                
+                # Hangi yükseliş kriterini kontrol edeceğiz
+                criterion_idx = min(peak_count, len(rise_criteria) - 1)
+                min_rise, max_rise = rise_criteria[criterion_idx]
+                
+                if min_rise <= rise_pct <= max_rise:
+                    # 2. tepe ve sonrası için önceki tepeyi geçmeli
+                    if peak_count == 0 or (last_peak is not None and price > last_peak[1]):
+                        peak_count += 1
+                        points.append(PeakTroughPoint(
+                            point_type="tepe",
+                            point_number=peak_count,
+                            date=date,
+                            price=round(price, 2),
+                            percentage_change=round(rise_pct, 2)
+                        ))
+                        last_peak = (idx, price, date)
+    
+    return points
+
 # Auth Routes
 @api_router.post("/auth/register", response_model=TokenResponse)
 async def register(user_data: UserCreate):
