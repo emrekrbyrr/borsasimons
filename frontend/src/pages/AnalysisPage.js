@@ -44,6 +44,12 @@ const AnalysisPage = () => {
   const [chartLoading, setChartLoading] = useState(false);
   const [timeInterval, setTimeInterval] = useState('1d');
   
+  // Comparison modal states
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareStock, setCompareStock] = useState(null);
+  const [compareCandleData, setCompareCandleData] = useState([]);
+  const [compareLoading, setCompareLoading] = useState(false);
+  
   const { symbol, startDate, endDate } = location.state || {};
 
   useEffect(() => {
