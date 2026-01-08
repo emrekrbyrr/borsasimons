@@ -520,8 +520,9 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 # Stock Routes
 @api_router.get("/stocks/symbols")
 async def get_symbols(current_user: dict = Depends(get_current_user)):
-    """Get list of BIST 100 symbols"""
-    return {"symbols": BIST_100_SYMBOLS}
+    """Get list of BIST symbols - alfabetik sıralı"""
+    sorted_symbols = sorted(BIST_100_SYMBOLS)
+    return {"symbols": sorted_symbols}
 
 @api_router.post("/stocks/analyze", response_model=StockAnalysisResponse)
 async def analyze_stock(request: StockAnalysisRequest, current_user: dict = Depends(get_current_user)):
