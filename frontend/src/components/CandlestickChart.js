@@ -56,6 +56,10 @@ const CandlestickChart = ({
         borderColor: '#E6DCCF',
         timeVisible: true,
         secondsVisible: false,
+        tickMarkFormatter: (time) => {
+          const date = new Date(time * 1000);
+          return `${date.getDate()}/${date.getMonth() + 1}`;
+        },
       },
     });
 
