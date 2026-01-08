@@ -350,24 +350,88 @@ const DashboardPage = () => {
                 </div>
               )}
 
-              {/* Selected Date Range & Analyze Button */}
-              <div className="mt-6 flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4">
-                  <div className="px-4 py-2 bg-[#F6F1EA] rounded-lg border border-[#E6DCCF]">
-                    <span className="text-xs text-[#7A6A5C]">Başlangıç</span>
-                    <p className="font-medium text-[#2E2620]">{format(startDate, 'dd MMM yyyy', { locale: tr })}</p>
-                  </div>
-                  <ArrowRight className="w-4 h-4 text-[#7A6A5C]" />
-                  <div className="px-4 py-2 bg-[#F6F1EA] rounded-lg border border-[#E6DCCF]">
-                    <span className="text-xs text-[#7A6A5C]">Bitiş</span>
-                    <p className="font-medium text-[#2E2620]">{format(endDate, 'dd MMM yyyy', { locale: tr })}</p>
-                  </div>
+              {/* Date Selection - Manuel veya Grafikten */}
+              <div className="mt-6 p-4 bg-[#F6F1EA]/50 rounded-xl border border-[#E6DCCF]">
+                <div className="flex items-center gap-2 mb-4">
+                  <CalendarIcon className="w-4 h-4 text-[#C86F4A]" />
+                  <span className="text-sm font-medium text-[#2E2620]">Analiz Tarih Aralığı</span>
+                  <span className="text-xs text-[#A89F91]">(grafikten seçin veya manuel girin)</span>
                 </div>
-                <Button
-                  onClick={handleAnalyze}
-                  disabled={!selectedSymbol || loading}
-                  className="bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full px-8"
-                  data-testid="analyze-btn"
+                
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    {/* Start Date Picker */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-[160px] justify-start text-left font-normal border-[#E6DCCF] hover:bg-white bg-white"
+                          data-testid="start-date-btn"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 text-[#6D7C3B]" />
+                          <div>
+                            <span className="text-xs text-[#7A6A5C] block">Başlangıç</span>
+                            <span className="text-sm font-medium text-[#2E2620]">
+                              {format(startDate, 'dd MMM yyyy', { locale: tr })}
+                            </span>
+                          </div>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={startDate}
+                          onSelect={(date) => date && setStartDate(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    
+                    <ArrowRight className="w-4 h-4 text-[#7A6A5C]" />
+                    
+                    {/* End Date Picker */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="w-[160px] justify-start text-left font-normal border-[#E6DCCF] hover:bg-white bg-white"
+                          data-testid="end-date-btn"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 text-[#B04832]" />
+                          <div>
+                            <span className="text-xs text-[#7A6A5C] block">Bitiş</span>
+                            <span className="text-sm font-medium text-[#2E2620]">
+                              {format(endDate, 'dd MMM yyyy', { locale: tr })}
+                            </span>
+                          </div>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={endDate}
+                          onSelect={(date) => date && setEndDate(date)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  
+                  <Button
+                    onClick={handleAnalyze}
+                    disabled={!selectedSymbol || loading}
+                    className="bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full px-8"
+                    data-testid="analyze-btn"
+                  >
+                    {loading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <Search className="w-4 h-4 mr-2" />
+                    )}
+                    Analiz Et
+                  </Button>
+                </div>
+              </div>
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
