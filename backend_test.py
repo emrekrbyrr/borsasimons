@@ -236,33 +236,77 @@ class BISTAnalysisAPITester:
         else:
             self.log_test("Find Similar Stocks", False, details, response)
 
-    def test_custom_pattern_search(self):
-        """Test custom pattern search"""
+    def test_find_partial_match_stocks(self):
+        """Test the new partial match endpoint for ongoing patterns"""
         if not self.token:
-            self.log_test("Custom Pattern Search", False, "No authentication token")
+            self.log_test("Find Partial Match Stocks", False, "No authentication token")
             return
             
         data = {
-            "pattern_criteria": {
-                "min_rise_1": 50,   # Lower thresholds for testing
-                "max_rise_1": 200,
-                "min_drop_1": 20,
-                "max_drop_1": 80,
-                "min_rise_2": 10
-            },
-            "start_date": "2023-01-01",
+            "symbol": "AKBNK",
+            "start_date": "2023-01-01", 
             "end_date": "2023-12-31",
-            "limit": 5
+            "min_similarity": 0.5,  # Lower threshold for testing
+            "pattern_start_percent": 30,
+            "limit": 15
         }
         
-        success, details, response = self.make_request('POST', 'stocks/custom-pattern', data)
+        success, details, response = self.make_request('POST', 'stocks/find-partial-match', data)
         
         if success and isinstance(response, list):
-            pattern_count = len(response)
-            self.log_test("Custom Pattern Search", True, 
-                         f"Found {pattern_count} stocks matching custom pattern")
+            partial_count = len(response)
+            # Check if results have partial match indicators
+            has_partial_indicators = any(
+                stock.get('match_type') == 'partial' and 'pattern_progress' in stock 
+                for stock in response
+            )
+            
+            if has_partial_indicators:
+                self.log_test("Find Partial Match Stocks", True, 
+                             f"Found {partial_count} partial matches with progress indicators")
+            else:
+                self.log_test("Find Partial Match Stocks", True, 
+                             f"Found {partial_count} partial matches (no progress indicators)")
         else:
-            self.log_test("Custom Pattern Search", False, details, response)
+            self.log_test("Find Partial Match Stocks", False, details, response)
+
+    def test_tgsas_stock_analysis(self):
+        """Test analysis of TGSAS stock specifically"""
+        if not self.token:
+            self.log_test("TGSAS Stock Analysis", False, "No authentication token")
+            return
+            
+        data = {
+            "symbol": "TGSAS",
+            "start_date": "2023-01-01",
+            "end_date": "2023-12-31"
+        }
+        
+        success, details, response = self.make_request('POST', 'stocks/analyze', data)
+        
+        if success and response.get('symbol') == 'TGSAS':
+            self.log_test("TGSAS Stock Analysis", True, "TGSAS analysis successful")
+        else:
+            self.log_test("TGSAS Stock Analysis", False, details, response)
+
+    def test_despc_stock_analysis(self):
+        """Test analysis of DESPC stock specifically"""
+        if not self.token:
+            self.log_test("DESPC Stock Analysis", False, "No authentication token")
+            return
+            
+        data = {
+            "symbol": "DESPC",
+            "start_date": "2023-01-01",
+            "end_date": "2023-12-31"
+        }
+        
+        success, details, response = self.make_request('POST', 'stocks/analyze', data)
+        
+        if success and response.get('symbol') == 'DESPC':
+            self.log_test("DESPC Stock Analysis", True, "DESPC analysis successful")
+        else:
+            self.log_test("DESPC Stock Analysis", False, details, response)
 
     def test_save_analysis(self):
         """Test saving analysis"""
