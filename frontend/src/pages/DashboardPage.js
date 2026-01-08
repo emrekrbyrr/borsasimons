@@ -188,24 +188,63 @@ const DashboardPage = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Symbol Select */}
+                {/* Symbol Select - Searchable Combobox */}
                 <div className="space-y-2">
                   <Label className="text-[#2E2620]">Hisse Senedi</Label>
-                  <Select value={selectedSymbol} onValueChange={handleSymbolChange}>
-                    <SelectTrigger 
-                      className="border-[#E6DCCF] focus:border-[#C86F4A] focus:ring-[#C86F4A]/20"
-                      data-testid="symbol-select"
-                    >
-                      <SelectValue placeholder="Hisse seçin" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-60">
-                      {symbols.map((symbol) => (
-                        <SelectItem key={symbol} value={symbol}>
-                          {symbol}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={symbolSearchOpen} onOpenChange={setSymbolSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={symbolSearchOpen}
+                        className="w-full justify-between border-[#E6DCCF] hover:bg-[#E8D9C7]/50"
+                        data-testid="symbol-select"
+                      >
+                        {selectedSymbol || "Hisse ara..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Hisse ara (örn: THY, GAR)..." 
+                          value={symbolSearch}
+                          onValueChange={setSymbolSearch}
+                          data-testid="symbol-search-input"
+                        />
+                        <CommandList>
+                          <CommandEmpty>Hisse bulunamadı.</CommandEmpty>
+                          <CommandGroup className="max-h-60 overflow-auto">
+                            {filteredSymbols.slice(0, 50).map((symbol) => (
+                              <CommandItem
+                                key={symbol}
+                                value={symbol}
+                                onSelect={() => {
+                                  handleSymbolChange(symbol);
+                                  setSymbolSearchOpen(false);
+                                  setSymbolSearch('');
+                                }}
+                                data-testid={`symbol-option-${symbol}`}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    selectedSymbol === symbol ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {symbol}
+                              </CommandItem>
+                            ))}
+                            {filteredSymbols.length > 50 && (
+                              <div className="p-2 text-xs text-center text-[#7A6A5C]">
+                                +{filteredSymbols.length - 50} daha... (aramayı daraltın)
+                              </div>
+                            )}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Start Date */}
