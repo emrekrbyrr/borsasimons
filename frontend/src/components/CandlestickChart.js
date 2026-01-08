@@ -27,6 +27,10 @@ const CandlestickChart = ({
         textColor: '#2E2620',
         fontFamily: 'Manrope, sans-serif',
       },
+      localization: {
+        locale: 'tr-TR',
+        dateFormat: 'dd/MM/yyyy',
+      },
       grid: {
         vertLines: { color: '#E6DCCF', style: 1 },
         horzLines: { color: '#E6DCCF', style: 1 },
@@ -54,12 +58,7 @@ const CandlestickChart = ({
       },
       timeScale: {
         borderColor: '#E6DCCF',
-        timeVisible: true,
-        secondsVisible: false,
-        tickMarkFormatter: (time) => {
-          const date = new Date(time * 1000);
-          return `${date.getDate()}/${date.getMonth() + 1}`;
-        },
+        timeVisible: false,
       },
     });
 
