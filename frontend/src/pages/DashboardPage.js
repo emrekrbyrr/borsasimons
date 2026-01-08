@@ -3,18 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
+import CandlestickChart from '../components/CandlestickChart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Calendar } from '../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 import { format, subYears } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import {
-  CalendarIcon,
   Search,
   TrendingUp,
   TrendingDown,
@@ -23,7 +22,8 @@ import {
   ArrowRight,
   Loader2,
   Check,
-  ChevronsUpDown
+  ChevronsUpDown,
+  CandlestickChart as CandleIcon
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -40,6 +40,12 @@ const DashboardPage = () => {
   const [quickStats, setQuickStats] = useState(null);
   const [symbolSearchOpen, setSymbolSearchOpen] = useState(false);
   const [symbolSearch, setSymbolSearch] = useState('');
+  
+  // Candlestick chart states
+  const [candleData, setCandleData] = useState([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [timeInterval, setTimeInterval] = useState('1d');
+  const [chartPeriod, setChartPeriod] = useState('2y');
 
   useEffect(() => {
     fetchSymbols();
@@ -57,10 +63,26 @@ const DashboardPage = () => {
       const response = await axios.get(`${API_URL}/stocks/symbols`, {
         headers: getAuthHeader()
       });
-      // Backend'den zaten alfabetik sıralı geliyor
       setSymbols(response.data.symbols);
     } catch (error) {
       toast.error('Semboller yüklenemedi');
+    }
+  };
+
+  const fetchCandlestickData = async (symbol, interval = timeInterval, period = chartPeriod) => {
+    if (!symbol) return;
+    setChartLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_URL}/stocks/${symbol}/candlestick?interval=${interval}&period=${period}`,
+        { headers: getAuthHeader() }
+      );
+      setCandleData(response.data.candles);
+    } catch (error) {
+      console.error('Candlestick error:', error);
+      toast.error('Grafik verisi yüklenemedi');
+    } finally {
+      setChartLoading(false);
     }
   };
 
