@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Button } from './ui/button';
 import { Loader2 } from 'lucide-react';
 
