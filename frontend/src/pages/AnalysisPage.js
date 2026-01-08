@@ -80,6 +80,30 @@ const AnalysisPage = () => {
     fetchCandlestickData(interval);
   };
 
+  // Open comparison modal and fetch comparison stock data
+  const openCompareModal = async (stock) => {
+    setCompareStock(stock);
+    setCompareModalOpen(true);
+    setCompareLoading(true);
+    
+    try {
+      // Fetch candlestick data for the similar stock with its own date range
+      const compareStartDate = stock.start_date || startDate;
+      const compareEndDate = stock.end_date || endDate;
+      
+      const response = await axios.get(
+        `${API_URL}/stocks/${stock.symbol}/candlestick?interval=${timeInterval}&period=2y`,
+        { headers: getAuthHeader() }
+      );
+      setCompareCandleData(response.data.candles);
+    } catch (error) {
+      console.error('Compare candlestick error:', error);
+      toast.error('Karşılaştırma verisi yüklenemedi');
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
   const fetchAnalysis = async () => {
     setLoading(true);
     try {
