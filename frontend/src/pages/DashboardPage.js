@@ -120,11 +120,11 @@ const DashboardPage = () => {
     }
   };
 
-  const handleRangeSelect = (range) => {
+  const handleRangeSelect = useCallback((range) => {
     setStartDate(range.start);
     setEndDate(range.end);
     toast.success(`Tarih aralığı seçildi: ${format(range.start, 'dd MMM yyyy', { locale: tr })} - ${format(range.end, 'dd MMM yyyy', { locale: tr })}`);
-  };
+  }, []);
 
   const handleAnalyze = () => {
     if (!selectedSymbol) {
