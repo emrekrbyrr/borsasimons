@@ -844,6 +844,54 @@ async def find_custom_pattern(request: CustomPatternRequest, current_user: dict 
     
     return results[:request.limit]
 
+@api_router.post("/stocks/advanced-pattern")
+async def find_advanced_pattern(request: AdvancedPatternRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Gelişmiş kalıp arama - kullanıcının belirlediği 6 dip / 5 tepe kriterleriyle arama yapar.
+    Her yükseliş ve düşüş için ayrı min/max değerleri kullanılır.
+    """
+    results = []
+    criteria = request.criteria
+    
+    # Performans için ilk 200 hisseyi kontrol et
+    stocks_to_check = sorted(BIST_100_SYMBOLS)[:200]
+    
+    for symbol in stocks_to_check:
+        try:
+            df = get_stock_data(symbol, request.start_date, request.end_date)
+            if df.empty or len(df) < 30:
+                continue
+            
+            prices = df['Close'].values
+            dates = df['Date'].tolist()
+            
+            # Kullanıcı kriterlerine göre dip/tepe bul
+            peaks_troughs = find_peaks_troughs_with_criteria(prices, dates, criteria)
+            
+            # En az belirtilen sayıda nokta eşleşmeli
+            if len(peaks_troughs) >= request.min_points_match:
+                # Eşleşme skoru hesapla (bulunan nokta sayısı / maksimum nokta sayısı)
+                match_score = (len(peaks_troughs) / 11) * 100  # 6 dip + 5 tepe = 11
+                
+                results.append({
+                    "symbol": symbol,
+                    "peaks_troughs": [p.model_dump() for p in peaks_troughs],
+                    "current_price": round(prices[-1], 2),
+                    "price_change_percent": round((prices[-1] - prices[0]) / prices[0] * 100, 2),
+                    "matching_points_count": len(peaks_troughs),
+                    "match_score": round(match_score, 1),
+                    "dip_count": len([p for p in peaks_troughs if p.point_type == "dip"]),
+                    "peak_count": len([p for p in peaks_troughs if p.point_type == "tepe"])
+                })
+        except Exception as e:
+            logger.warning(f"Error processing {symbol}: {e}")
+            continue
+    
+    # Eşleşme skoruna göre sırala
+    results.sort(key=lambda x: x["match_score"], reverse=True)
+    
+    return results[:request.limit]
+
 @api_router.get("/stocks/{symbol}/quick")
 async def get_stock_quick(symbol: str, current_user: dict = Depends(get_current_user)):
     """Get quick stock info"""
