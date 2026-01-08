@@ -630,6 +630,65 @@ async def get_symbols(current_user: dict = Depends(get_current_user)):
     sorted_symbols = sorted(BIST_100_SYMBOLS)
     return {"symbols": sorted_symbols}
 
+@api_router.get("/stocks/{symbol}/candlestick")
+async def get_candlestick_data(
+    symbol: str, 
+    interval: str = "1d",
+    period: str = "2y",
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get candlestick (OHLC) data for charting.
+    interval: 1h, 4h, 1d, 1wk, 1mo
+    period: 1mo, 3mo, 6mo, 1y, 2y, 5y
+    """
+    ticker = f"{symbol}.IS"
+    try:
+        stock = yf.Ticker(ticker)
+        
+        # Yahoo Finance interval mapping
+        valid_intervals = ["1h", "4h", "1d", "1wk", "1mo"]
+        if interval not in valid_intervals:
+            interval = "1d"
+        
+        # For intraday data, period must be limited
+        if interval in ["1h", "4h"]:
+            period = "60d"  # Max 60 days for hourly data
+        
+        df = stock.history(period=period, interval=interval)
+        
+        if df.empty:
+            raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+        
+        df = df.reset_index()
+        
+        candles = []
+        for _, row in df.iterrows():
+            # Handle datetime for different intervals
+            if 'Datetime' in df.columns:
+                timestamp = int(row['Datetime'].timestamp())
+            else:
+                timestamp = int(row['Date'].timestamp())
+            
+            candles.append({
+                "time": timestamp,
+                "open": round(float(row['Open']), 2),
+                "high": round(float(row['High']), 2),
+                "low": round(float(row['Low']), 2),
+                "close": round(float(row['Close']), 2),
+                "volume": int(row['Volume']) if pd.notna(row['Volume']) else 0
+            })
+        
+        return {
+            "symbol": symbol,
+            "interval": interval,
+            "period": period,
+            "candles": candles
+        }
+    except Exception as e:
+        logger.error(f"Error getting candlestick data for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/stocks/analyze", response_model=StockAnalysisResponse)
 async def analyze_stock(request: StockAnalysisRequest, current_user: dict = Depends(get_current_user)):
     """Analyze a single stock"""
