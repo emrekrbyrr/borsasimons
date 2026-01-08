@@ -255,6 +255,56 @@ def calculate_similarity(prices1: np.ndarray, prices2: np.ndarray) -> tuple:
     
     return similarity, correlation
 
+
+def calculate_partial_similarity(ref_prices: np.ndarray, target_prices: np.ndarray, start_percent: float = 30) -> tuple:
+    """
+    Kalıbın başlangıç kısmını karşılaştır - devam eden kalıpları bulmak için.
+    ref_prices: Referans hissenin tam kalıbı
+    target_prices: Karşılaştırılacak hissenin mevcut fiyatları
+    start_percent: Referans kalıbın ilk yüzde kaçı karşılaştırılacak
+    """
+    if len(ref_prices) < 10 or len(target_prices) < 10:
+        return 0.0, 0.0, 0.0
+    
+    # Referans kalıbın başlangıç kısmını al
+    ref_start_len = max(10, int(len(ref_prices) * start_percent / 100))
+    ref_start = ref_prices[:ref_start_len]
+    
+    # Target'ın son kısmını al (mevcut durumu)
+    target_recent = target_prices[-ref_start_len:] if len(target_prices) >= ref_start_len else target_prices
+    
+    # Normalize
+    ref_norm = normalize_prices(ref_start)
+    target_norm = normalize_prices(target_recent)
+    
+    # Aynı uzunluğa getir
+    min_len = min(len(ref_norm), len(target_norm))
+    if min_len < 5:
+        return 0.0, 0.0, 0.0
+    
+    indices1 = np.linspace(0, len(ref_norm)-1, min_len).astype(int)
+    indices2 = np.linspace(0, len(target_norm)-1, min_len).astype(int)
+    ref_norm = ref_norm[indices1]
+    target_norm = target_norm[indices2]
+    
+    # Benzerlik hesapla
+    distance = euclidean(ref_norm, target_norm)
+    max_distance = np.sqrt(len(ref_norm))
+    similarity = max(0, 1 - (distance / max_distance))
+    
+    # Korelasyon
+    try:
+        correlation, _ = pearsonr(ref_norm, target_norm)
+        if np.isnan(correlation):
+            correlation = 0.0
+    except:
+        correlation = 0.0
+    
+    # Kalıp ilerleme yüzdesi (target ne kadarını tamamlamış)
+    pattern_progress = (len(target_recent) / len(ref_prices)) * 100
+    
+    return similarity, correlation, pattern_progress
+
 def find_peaks_troughs(prices: np.ndarray, dates: List[str]) -> List[PeakTroughPoint]:
     """
     Find peaks and troughs based on the specified criteria:
