@@ -11,6 +11,7 @@ const AnalysisCandlestickChart = ({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
+  const markersApiRef = useRef(null);
 
   useEffect(() => {
     if (!chartContainerRef.current || chartRef.current) return;
