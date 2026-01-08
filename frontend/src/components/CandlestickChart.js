@@ -12,6 +12,7 @@ const CandlestickChart = ({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
+  const markersApiRef = useRef(null);
   const onRangeSelectRef = useRef(onRangeSelect);
   const selectionStateRef = useRef({ start: null, end: null, isSelecting: false });
   const [displayState, setDisplayState] = useState({ start: null, end: null, isSelecting: false });
