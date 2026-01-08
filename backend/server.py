@@ -837,7 +837,11 @@ async def analyze_stock(request: StockAnalysisRequest, current_user: dict = Depe
 
 @api_router.post("/stocks/find-similar", response_model=List[SimilarStockResult])
 async def find_similar_stocks(request: SimilaritySearchRequest, current_user: dict = Depends(get_current_user)):
-    """Find stocks with similar price patterns"""
+    """
+    Find stocks with similar price patterns using sliding window approach.
+    Searches through the ENTIRE history of each stock to find when a similar pattern occurred.
+    Also calculates what happened AFTER the pattern completed.
+    """
     # Get reference stock data
     ref_df = get_stock_data(request.symbol, request.start_date, request.end_date)
     
@@ -845,35 +849,59 @@ async def find_similar_stocks(request: SimilaritySearchRequest, current_user: di
         raise HTTPException(status_code=404, detail=f"No data found for {request.symbol}")
     
     ref_prices = ref_df['Close'].values
+    ref_pattern_length = len(ref_prices)
     results = []
     
-    # Compare with all other BIST 100 stocks
-    for symbol in BIST_100_SYMBOLS:
+    # Her hisse için son 7 yıllık veriyi tara
+    from datetime import datetime, timedelta
+    history_end = datetime.now().strftime('%Y-%m-%d')
+    history_start = (datetime.now() - timedelta(days=7*365)).strftime('%Y-%m-%d')  # 7 yıl geriye
+    
+    logger.info(f"Searching for patterns similar to {request.symbol} ({ref_pattern_length} days) in history from {history_start} to {history_end}")
+    
+    # Performans için hisse sayısını sınırla
+    stocks_to_check = BIST_100_SYMBOLS[:200]  # İlk 200 hisse
+    
+    for symbol in stocks_to_check:
         if symbol == request.symbol:
             continue
         
         try:
-            df = get_stock_data(symbol, request.start_date, request.end_date)
-            if df.empty or len(df) < 10:
+            # Hissenin TÜM geçmiş verisini al
+            df = get_stock_data(symbol, history_start, history_end)
+            if df.empty or len(df) < ref_pattern_length + 66:  # En az kalıp + 3 ay sonrası kadar veri olmalı
                 continue
             
-            prices = df['Close'].values
-            dates = df['Date'].tolist()
+            all_prices = df['Close'].values
+            all_dates = df['Date'].tolist()
             
-            similarity, correlation = calculate_similarity(ref_prices, prices)
+            # Sliding window ile en benzer dönemi bul
+            best_match = find_best_matching_window(ref_prices, all_prices, all_dates)
             
-            if similarity >= request.min_similarity:
-                peaks_troughs = find_peaks_troughs(prices, dates)
+            if best_match and best_match['similarity'] >= request.min_similarity:
+                # O dönemdeki dip/tepe noktalarını bul
+                window_prices = best_match['prices']
+                window_start_idx = best_match['start_idx']
+                window_end_idx = best_match['end_idx']
+                window_dates = all_dates[window_start_idx:window_end_idx]
+                
+                peaks_troughs = find_peaks_troughs(window_prices, window_dates)
+                
+                # Güncel fiyat
+                current_price = all_prices[-1]
                 
                 results.append(SimilarStockResult(
                     symbol=symbol,
-                    similarity_score=round(similarity * 100, 2),
-                    correlation=round(correlation * 100, 2),
-                    start_date=request.start_date,
-                    end_date=request.end_date,
+                    similarity_score=round(best_match['similarity'] * 100, 2),
+                    correlation=round(best_match['correlation'] * 100, 2),
+                    start_date=best_match['start_date'],
+                    end_date=best_match['end_date'],
                     peaks_troughs=peaks_troughs,
-                    current_price=round(prices[-1], 2),
-                    price_change_percent=round((prices[-1] - prices[0]) / prices[0] * 100, 2)
+                    current_price=round(current_price, 2),
+                    price_change_percent=round((window_prices[-1] - window_prices[0]) / window_prices[0] * 100, 2),
+                    after_pattern_1m=best_match['after_1m_change'],
+                    after_pattern_3m=best_match['after_3m_change'],
+                    pattern_end_price=best_match['pattern_end_price']
                 ))
         except Exception as e:
             logger.warning(f"Error processing {symbol}: {e}")
@@ -881,6 +909,8 @@ async def find_similar_stocks(request: SimilaritySearchRequest, current_user: di
     
     # Sort by similarity score
     results.sort(key=lambda x: x.similarity_score, reverse=True)
+    
+    logger.info(f"Found {len(results)} similar patterns")
     
     return results[:request.limit]
 
