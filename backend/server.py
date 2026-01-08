@@ -737,12 +737,15 @@ async def get_candlestick_data(
     symbol: str, 
     interval: str = "1d",
     period: str = "2y",
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
     """
     Get candlestick (OHLC) data for charting.
     interval: 1h, 4h, 1d, 1wk, 1mo
-    period: 1mo, 3mo, 6mo, 1y, 2y, 5y
+    period: 1mo, 3mo, 6mo, 1y, 2y, 5y (used if start_date/end_date not provided)
+    start_date, end_date: Optional date range (format: YYYY-MM-DD)
     """
     ticker = f"{symbol}.IS"
     try:
@@ -753,11 +756,14 @@ async def get_candlestick_data(
         if interval not in valid_intervals:
             interval = "1d"
         
-        # For intraday data, period must be limited
-        if interval in ["1h", "4h"]:
-            period = "60d"  # Max 60 days for hourly data
-        
-        df = stock.history(period=period, interval=interval)
+        # Use date range if provided, otherwise use period
+        if start_date and end_date:
+            df = stock.history(start=start_date, end=end_date, interval=interval)
+        else:
+            # For intraday data, period must be limited
+            if interval in ["1h", "4h"]:
+                period = "60d"  # Max 60 days for hourly data
+            df = stock.history(period=period, interval=interval)
         
         if df.empty:
             raise HTTPException(status_code=404, detail=f"No data for {symbol}")
