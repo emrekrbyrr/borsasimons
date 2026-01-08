@@ -1,9 +1,9 @@
 {
   "summary": {
     "total_tests": 12,
-    "passed_tests": 11,
-    "failed_tests": 1,
-    "success_rate": 91.67
+    "passed_tests": 12,
+    "failed_tests": 0,
+    "success_rate": 100.0
   },
   "test_results": [
     {
@@ -11,198 +11,85 @@
       "success": true,
       "details": "API is healthy",
       "response_data": null,
-      "timestamp": "2026-01-08T20:30:54.692947"
+      "timestamp": "2026-01-08T20:31:55.152240"
     },
     {
       "test_name": "User Registration",
       "success": true,
-      "details": "User created with ID: 826aa4b1-c07b-4aae-acb7-1c7d84005d6e",
+      "details": "User created with ID: af1897dc-ddf5-4d35-b66c-e70d620ab0fd",
       "response_data": null,
-      "timestamp": "2026-01-08T20:30:55.494970"
+      "timestamp": "2026-01-08T20:31:55.432077"
     },
     {
       "test_name": "User Login",
       "success": true,
       "details": "Login successful",
       "response_data": null,
-      "timestamp": "2026-01-08T20:30:55.758908"
+      "timestamp": "2026-01-08T20:31:55.693608"
     },
     {
       "test_name": "Get User Profile",
       "success": true,
-      "details": "Profile retrieved for test_user_203054@test.com",
+      "details": "Profile retrieved for test_user_203155@test.com",
       "response_data": null,
-      "timestamp": "2026-01-08T20:30:55.805606"
+      "timestamp": "2026-01-08T20:31:55.736702"
     },
     {
       "test_name": "Get BIST Symbols",
-      "success": false,
-      "details": "Status: 200",
-      "response_data": {
-        "symbols": [
-          "AEFES",
-          "AFYON",
-          "AGESA",
-          "AGHOL",
-          "AKBNK",
-          "AKCNS",
-          "AKFGY",
-          "AKFYE",
-          "AKSA",
-          "AKSEN",
-          "ALARK",
-          "ALBRK",
-          "ALFAS",
-          "ALGYO",
-          "ALKIM",
-          "ANSGR",
-          "ARCLK",
-          "ARDYZ",
-          "ASELS",
-          "ASUZU",
-          "AYDEM",
-          "AYGAZ",
-          "BERA",
-          "BIENY",
-          "BIMAS",
-          "BRSAN",
-          "BRYAT",
-          "BTCIM",
-          "BUCIM",
-          "CANTE",
-          "CCOLA",
-          "CEMTS",
-          "CIMSA",
-          "CLEBI",
-          "CONSE",
-          "DEVA",
-          "DOAS",
-          "DOHOL",
-          "ECILC",
-          "EGEEN",
-          "EKGYO",
-          "ENJSA",
-          "ENKAI",
-          "ERBOS",
-          "EREGL",
-          "EUPWR",
-          "EUREN",
-          "FROTO",
-          "GARAN",
-          "GENIL",
-          "GESAN",
-          "GLYHO",
-          "GOZDE",
-          "GUBRF",
-          "GWIND",
-          "HALKB",
-          "HEKTS",
-          "IPEKE",
-          "ISCTR",
-          "ISGYO",
-          "ISMEN",
-          "KARSN",
-          "KCAER",
-          "KCHOL",
-          "KLSER",
-          "KONTR",
-          "KONYA",
-          "KOZAA",
-          "KOZAL",
-          "KRDMD",
-          "KRVGD",
-          "KTLEV",
-          "LMKDC",
-          "LOGO",
-          "MAVI",
-          "MERCN",
-          "MGROS",
-          "MIATK",
-          "MKGYO",
-          "ODAS",
-          "OTKAR",
-          "OYAKC",
-          "PAPIL",
-          "PETKM",
-          "PGSUS",
-          "QUAGR",
-          "SAHOL",
-          "SASA",
-          "SELEC",
-          "SISE",
-          "SKBNK",
-          "SMRTG",
-          "SOKM",
-          "TAVHL",
-          "TCELL",
-          "THYAO",
-          "TKFEN",
-          "TKNSA",
-          "TOASO",
-          "TRGYO",
-          "TSKB",
-          "TTKOM",
-          "TTRAK",
-          "TUPRS",
-          "TURSG",
-          "ULKER",
-          "VAKBN",
-          "VERUS",
-          "VESTL",
-          "YKBNK"
-        ]
-      },
-      "timestamp": "2026-01-08T20:30:55.845313"
+      "success": true,
+      "details": "Retrieved 110 symbols (expected 100)",
+      "response_data": null,
+      "timestamp": "2026-01-08T20:31:55.815482"
     },
     {
       "test_name": "Quick Stock Info",
       "success": true,
       "details": "AKBNK current price: \u20ba72.7",
       "response_data": null,
-      "timestamp": "2026-01-08T20:30:56.934891"
+      "timestamp": "2026-01-08T20:31:56.204630"
     },
     {
       "test_name": "Stock Analysis",
       "success": true,
       "details": "Analysis complete: 249 price points, 4 peaks, 1 troughs",
       "response_data": null,
-      "timestamp": "2026-01-08T20:30:57.143930"
+      "timestamp": "2026-01-08T20:31:56.411982"
     },
     {
       "test_name": "Find Similar Stocks",
       "success": true,
       "details": "Found 10 similar stocks to AKBNK",
       "response_data": null,
-      "timestamp": "2026-01-08T20:31:21.225840"
+      "timestamp": "2026-01-08T20:32:09.104703"
     },
     {
       "test_name": "Custom Pattern Search",
       "success": true,
       "details": "Found 1 stocks matching custom pattern",
       "response_data": null,
-      "timestamp": "2026-01-08T20:31:34.275333"
+      "timestamp": "2026-01-08T20:32:22.817534"
     },
     {
       "test_name": "Save Analysis",
       "success": true,
-      "details": "Analysis saved with ID: 3828709c-e921-43a1-83f5-ced1ff6081ea",
+      "details": "Analysis saved with ID: 61094e26-75d2-4d71-af1a-f9e64f0c05a4",
       "response_data": null,
-      "timestamp": "2026-01-08T20:31:34.410159"
+      "timestamp": "2026-01-08T20:32:22.895084"
     },
     {
       "test_name": "Get Saved Analyses",
       "success": true,
       "details": "Retrieved 1 saved analyses",
       "response_data": null,
-      "timestamp": "2026-01-08T20:31:34.444273"
+      "timestamp": "2026-01-08T20:32:22.968952"
     },
     {
       "test_name": "Invalid Authentication",
       "success": true,
       "details": "Properly rejected invalid token",
       "response_data": null,
-      "timestamp": "2026-01-08T20:31:34.486277"
+      "timestamp": "2026-01-08T20:32:23.043143"
     }
   ],
-  "timestamp": "2026-01-08T20:31:34.486322"
+  "timestamp": "2026-01-08T20:32:23.043197"
 }
