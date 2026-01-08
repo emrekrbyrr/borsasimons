@@ -15,11 +15,12 @@ BIST 100 hisselerinde benzer fiyat kalıplarını analiz eden web platformu. Kul
 - [x] Hisse analizi ve grafik görselleştirme
 - [x] Dip/Tepe noktası tespiti
 - [x] Benzerlik analizi (Tam Kalıp)
-- [x] **Devam Eden Kalıp Araması (YENİ)** - Kalıbın başlangıcına benzeyen ama tamamlanmamış hisseler
+- [x] **Devam Eden Kalıp Araması** - Kalıbın başlangıcına benzeyen ama tamamlanmamış hisseler
 - [x] Özel kalıp arama
 - [x] Analiz kaydetme
 
-## What's Been Implemented (08 Ocak 2026)
+## What's Been Implemented
+
 ### İterasyon 1 - MVP
 - Temel auth sistemi
 - BIST 100 hisse analizi
@@ -32,12 +33,36 @@ BIST 100 hisselerinde benzer fiyat kalıplarını analiz eden web platformu. Kul
 - Frontend'e "Tam Kalıp" / "Devam Eden Kalıp" sekmeleri eklendi
 - Kalıp başlangıç oranı ayarlanabilir (20-60%)
 
+### İterasyon 3 - Mum Grafik ve Marker'lar (08 Ocak 2026)
+- **Analiz Sayfası Mum Grafiği**: AnalysisPage'de profesyonel candlestick chart
+- **Dip/Tepe Marker'ları**: Analiz sonuçlarında tespit edilen noktalar grafikte gösteriliyor
+- **lightweight-charts v5 Uyumu**: `createSeriesMarkers()` API'si ile marker desteği
+- **Dashboard Tarih Seçimi Vurgulaması**: Seçilen başlangıç ve bitiş tarihleri grafikte marker olarak gösteriliyor
+- Başlangıç marker'ı (yeşil ok yukarı) ve Bitiş marker'ı (kırmızı ok aşağı)
+
 ## Tech Stack
 - Backend: FastAPI, MongoDB, yfinance, scipy, scikit-learn
-- Frontend: React, Tailwind CSS, Recharts, Shadcn/UI
+- Frontend: React, Tailwind CSS, lightweight-charts v5.1.0, Shadcn/UI
 - Auth: JWT
 
-## Next Action Items
-1. Detaylı 6 dip / 5 tepe noktası kriterlerini optimize et
-2. CSV/PDF dışa aktarma
-3. Performans optimizasyonu (caching)
+## Prioritized Backlog
+
+### P0 (Tamamlandı)
+- [x] Analiz sayfası mum grafiği
+- [x] Dip/tepe marker'ları
+- [x] Dashboard tarih seçimi vurgulaması
+
+### P1 (Sıradaki)
+- [ ] Özel kalıpları kullanıcı profiline kaydetme
+- [ ] CSV/PDF dışa aktarma
+
+### P2 (Gelecek)
+- [ ] Hacim verisi ekleme (volume series)
+- [ ] Teknik indikatörler (MA, RSI)
+- [ ] Performans optimizasyonu (caching)
+
+### P3 (İleriki)
+- [ ] Görsel kalıp çizimi
+
+## Test Raporları
+- `/app/test_reports/iteration_4.json` - Backend %100, Frontend %100 test başarısı
