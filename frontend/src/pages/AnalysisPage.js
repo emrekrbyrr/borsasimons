@@ -439,11 +439,29 @@ const AnalysisPage = () => {
                                       )}
                                     </div>
                                     <p className="text-sm text-[#7A6A5C] mt-1">
+                                      {stock.start_date} → {stock.end_date}
+                                    </p>
+                                    <p className="text-sm text-[#7A6A5C]">
                                       Korelasyon: {stock.correlation}%
                                       {stock.pattern_progress && (
                                         <span className="ml-2">• İlerleme: %{stock.pattern_progress}</span>
                                       )}
                                     </p>
+                                    {/* Kalıptan sonra ne oldu */}
+                                    {(stock.after_pattern_1m !== null || stock.after_pattern_3m !== null) && (
+                                      <div className="flex gap-3 mt-1">
+                                        {stock.after_pattern_1m !== null && (
+                                          <span className={`text-xs font-medium ${stock.after_pattern_1m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                                            1A: {stock.after_pattern_1m >= 0 ? '+' : ''}{stock.after_pattern_1m}%
+                                          </span>
+                                        )}
+                                        {stock.after_pattern_3m !== null && (
+                                          <span className={`text-xs font-medium ${stock.after_pattern_3m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                                            3A: {stock.after_pattern_3m >= 0 ? '+' : ''}{stock.after_pattern_3m}%
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="text-right">
                                     <p className="font-medium text-[#2E2620]">
