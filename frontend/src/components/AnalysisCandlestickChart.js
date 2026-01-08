@@ -1,5 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { useEffect, useRef } from 'react';
+import { createChart, CandlestickSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Loader2 } from 'lucide-react';
 
 const AnalysisCandlestickChart = ({ 
