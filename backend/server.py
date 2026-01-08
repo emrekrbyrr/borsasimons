@@ -575,6 +575,70 @@ async def find_similar_stocks(request: SimilaritySearchRequest, current_user: di
     
     return results[:request.limit]
 
+
+@api_router.post("/stocks/find-partial-match", response_model=List[SimilarStockResult])
+async def find_partial_match_stocks(request: PartialMatchRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Kalıbın başlangıcı benzeyen ama henüz tamamlanmamış hisseleri bul.
+    Bu, referans hissenin kalıbının ilk kısmına benzeyen hisseleri bulur.
+    """
+    # Get reference stock data
+    ref_df = get_stock_data(request.symbol, request.start_date, request.end_date)
+    
+    if ref_df.empty:
+        raise HTTPException(status_code=404, detail=f"No data found for {request.symbol}")
+    
+    ref_prices = ref_df['Close'].values
+    results = []
+    
+    # Son 6 ay için tarih hesapla
+    from datetime import datetime, timedelta
+    end_date_obj = datetime.strptime(request.end_date, '%Y-%m-%d')
+    recent_start = (end_date_obj - timedelta(days=180)).strftime('%Y-%m-%d')
+    
+    # Compare with all other BIST stocks
+    for symbol in BIST_100_SYMBOLS:
+        if symbol == request.symbol:
+            continue
+        
+        try:
+            # Son 6 aylık veriyi al (devam eden kalıp için)
+            df = get_stock_data(symbol, recent_start, request.end_date)
+            if df.empty or len(df) < 20:
+                continue
+            
+            prices = df['Close'].values
+            dates = df['Date'].tolist()
+            
+            # Kısmi benzerlik hesapla
+            similarity, correlation, pattern_progress = calculate_partial_similarity(
+                ref_prices, prices, request.pattern_start_percent
+            )
+            
+            if similarity >= request.min_similarity:
+                peaks_troughs = find_peaks_troughs(prices, dates)
+                
+                results.append(SimilarStockResult(
+                    symbol=symbol,
+                    similarity_score=round(similarity * 100, 2),
+                    correlation=round(correlation * 100, 2),
+                    start_date=recent_start,
+                    end_date=request.end_date,
+                    peaks_troughs=peaks_troughs,
+                    current_price=round(prices[-1], 2),
+                    price_change_percent=round((prices[-1] - prices[0]) / prices[0] * 100, 2),
+                    match_type="partial",
+                    pattern_progress=round(pattern_progress, 1)
+                ))
+        except Exception as e:
+            logger.warning(f"Error processing {symbol}: {e}")
+            continue
+    
+    # Sort by similarity score
+    results.sort(key=lambda x: x.similarity_score, reverse=True)
+    
+    return results[:request.limit]
+
 @api_router.post("/stocks/custom-pattern")
 async def find_custom_pattern(request: CustomPatternRequest, current_user: dict = Depends(get_current_user)):
     """Find stocks matching custom pattern criteria"""
