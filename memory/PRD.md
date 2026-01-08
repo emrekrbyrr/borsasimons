@@ -51,6 +51,7 @@ BIST 100 hisselerinde benzer fiyat kalıplarını analiz eden web platformu. Kul
 - [x] Analiz sayfası mum grafiği
 - [x] Dip/tepe marker'ları
 - [x] Dashboard tarih seçimi vurgulaması
+- [x] **İki Hisse Karşılaştırma Modal'ı** - Benzer hisse bulunduktan sonra yan yana grafik karşılaştırması
 
 ### P1 (Sıradaki)
 - [ ] Özel kalıpları kullanıcı profiline kaydetme
@@ -66,3 +67,4 @@ BIST 100 hisselerinde benzer fiyat kalıplarını analiz eden web platformu. Kul
 
 ## Test Raporları
 - `/app/test_reports/iteration_4.json` - Backend %100, Frontend %100 test başarısı
+- `/app/test_reports/iteration_5.json` - Karşılaştırma özelliği %100 test başarısı
