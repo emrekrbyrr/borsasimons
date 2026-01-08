@@ -129,6 +129,47 @@ class SimilaritySearchRequest(BaseModel):
     min_similarity: float = 0.7
     limit: int = 10
 
+class PatternCriteria(BaseModel):
+    """Her dip/tepe noktası için özelleştirilebilir kriterler"""
+    # 1. Dip -> 1. Tepe yükseliş
+    rise_1_min: float = 100
+    rise_1_max: float = 160
+    # 1. Tepe -> 2. Dip düşüş
+    drop_1_min: float = 40
+    drop_1_max: float = 60
+    # 2. Dip -> 2. Tepe yükseliş (1. tepeyi geçmeli)
+    rise_2_min: float = 20
+    rise_2_max: float = 50
+    # 2. Tepe -> 3. Dip düşüş
+    drop_2_min: float = 20
+    drop_2_max: float = 30
+    # 3. Dip -> 3. Tepe yükseliş (2. tepeyi geçmeli)
+    rise_3_min: float = 15
+    rise_3_max: float = 40
+    # 3. Tepe -> 4. Dip düşüş
+    drop_3_min: float = 15
+    drop_3_max: float = 30
+    # 4. Dip -> 4. Tepe yükseliş
+    rise_4_min: float = 10
+    rise_4_max: float = 30
+    # 4. Tepe -> 5. Dip düşüş
+    drop_4_min: float = 10
+    drop_4_max: float = 25
+    # 5. Dip -> 5. Tepe yükseliş
+    rise_5_min: float = 5
+    rise_5_max: float = 20
+    # 5. Tepe -> 6. Dip düşüş
+    drop_5_min: float = 10
+    drop_5_max: float = 40
+
+class AdvancedPatternRequest(BaseModel):
+    """Gelişmiş kalıp arama - kullanıcı tanımlı kriterler"""
+    criteria: PatternCriteria
+    start_date: str
+    end_date: str
+    min_points_match: int = 4  # En az kaç nokta eşleşmeli
+    limit: int = 20
+
 class CustomPatternRequest(BaseModel):
     pattern_criteria: Dict[str, Any]
     start_date: str
