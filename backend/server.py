@@ -202,6 +202,10 @@ class SimilarStockResult(BaseModel):
     price_change_percent: float
     match_type: str = "full"  # "full" or "partial"
     pattern_progress: Optional[float] = None  # % of pattern completed
+    # Kalıptan sonra ne oldu bilgisi
+    after_pattern_1m: Optional[float] = None  # 1 ay sonraki değişim %
+    after_pattern_3m: Optional[float] = None  # 3 ay sonraki değişim %
+    pattern_end_price: Optional[float] = None  # Kalıp sonundaki fiyat
 
 class PartialMatchRequest(BaseModel):
     symbol: str
