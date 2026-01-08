@@ -87,12 +87,13 @@ const AnalysisPage = () => {
     setCompareLoading(true);
     
     try {
-      // Fetch candlestick data for the similar stock with its own date range
-      const compareStartDate = stock.start_date || startDate;
-      const compareEndDate = stock.end_date || endDate;
+      // Fetch candlestick data for the similar stock with ITS OWN date range (when pattern was found)
+      const compareStartDate = stock.start_date;
+      const compareEndDate = stock.end_date;
       
+      // Use start_date and end_date parameters to get the exact pattern period
       const response = await axios.get(
-        `${API_URL}/stocks/${stock.symbol}/candlestick?interval=${timeInterval}&period=2y`,
+        `${API_URL}/stocks/${stock.symbol}/candlestick?interval=${timeInterval}&start_date=${compareStartDate}&end_date=${compareEndDate}`,
         { headers: getAuthHeader() }
       );
       setCompareCandleData(response.data.candles);
