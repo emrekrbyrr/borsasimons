@@ -290,54 +290,93 @@ const DashboardPage = () => {
                   </Popover>
                 </div>
 
-                {/* Start Date */}
+                {/* Time Interval */}
                 <div className="space-y-2">
-                  <Label className="text-[#2E2620]">Başlangıç Tarihi</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal border-[#E6DCCF] hover:bg-[#E8D9C7]/50"
-                        data-testid="start-date-btn"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-[#7A6A5C]" />
-                        {startDate ? format(startDate, 'dd MMM yyyy', { locale: tr }) : 'Tarih seçin'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={startDate}
-                        onSelect={setStartDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Label className="text-[#2E2620]">Zaman Dilimi</Label>
+                  <Select value={timeInterval} onValueChange={handleIntervalChange}>
+                    <SelectTrigger className="border-[#E6DCCF]" data-testid="interval-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1h">1 Saatlik</SelectItem>
+                      <SelectItem value="4h">4 Saatlik</SelectItem>
+                      <SelectItem value="1d">Günlük</SelectItem>
+                      <SelectItem value="1wk">Haftalık</SelectItem>
+                      <SelectItem value="1mo">Aylık</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* End Date */}
+                {/* Period */}
                 <div className="space-y-2">
-                  <Label className="text-[#2E2620]">Bitiş Tarihi</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left font-normal border-[#E6DCCF] hover:bg-[#E8D9C7]/50"
-                        data-testid="end-date-btn"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-[#7A6A5C]" />
-                        {endDate ? format(endDate, 'dd MMM yyyy', { locale: tr }) : 'Tarih seçin'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={endDate}
-                        onSelect={setEndDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
+                  <Label className="text-[#2E2620]">Periyot</Label>
+                  <Select value={chartPeriod} onValueChange={handlePeriodChange}>
+                    <SelectTrigger className="border-[#E6DCCF]" data-testid="period-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3mo">3 Ay</SelectItem>
+                      <SelectItem value="6mo">6 Ay</SelectItem>
+                      <SelectItem value="1y">1 Yıl</SelectItem>
+                      <SelectItem value="2y">2 Yıl</SelectItem>
+                      <SelectItem value="5y">5 Yıl</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Candlestick Chart */}
+              {selectedSymbol && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <CandleIcon className="w-5 h-5 text-[#C86F4A]" />
+                      <h3 className="font-medium text-[#2E2620]">{selectedSymbol} Grafiği</h3>
+                      {quickStats && (
+                        <span className={`text-sm font-medium ${quickStats.change_percent >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                          ₺{quickStats.current_price?.toLocaleString('tr-TR')} ({quickStats.change_percent >= 0 ? '+' : ''}{quickStats.change_percent?.toFixed(2)}%)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <CandlestickChart
+                    data={candleData}
+                    loading={chartLoading}
+                    onRangeSelect={handleRangeSelect}
+                    height={350}
+                  />
+                </div>
+              )}
+
+              {/* Selected Date Range & Analyze Button */}
+              <div className="mt-6 flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="px-4 py-2 bg-[#F6F1EA] rounded-lg border border-[#E6DCCF]">
+                    <span className="text-xs text-[#7A6A5C]">Başlangıç</span>
+                    <p className="font-medium text-[#2E2620]">{format(startDate, 'dd MMM yyyy', { locale: tr })}</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-[#7A6A5C]" />
+                  <div className="px-4 py-2 bg-[#F6F1EA] rounded-lg border border-[#E6DCCF]">
+                    <span className="text-xs text-[#7A6A5C]">Bitiş</span>
+                    <p className="font-medium text-[#2E2620]">{format(endDate, 'dd MMM yyyy', { locale: tr })}</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleAnalyze}
+                  disabled={!selectedSymbol || loading}
+                  className="bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full px-8"
+                  data-testid="analyze-btn"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Search className="w-4 h-4 mr-2" />
+                  )}
+                  Analiz Et
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
                 </div>
 
                 {/* Analyze Button */}
