@@ -12,11 +12,18 @@ const CandlestickChart = ({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
+  const onRangeSelectRef = useRef(onRangeSelect);
   const selectionStateRef = useRef({ start: null, end: null, isSelecting: false });
   const [displayState, setDisplayState] = useState({ start: null, end: null, isSelecting: false });
 
+  // Keep onRangeSelect ref updated
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    onRangeSelectRef.current = onRangeSelect;
+  }, [onRangeSelect]);
+
+  // Initialize chart only once
+  useEffect(() => {
+    if (!chartContainerRef.current || chartRef.current) return;
 
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth,
@@ -73,7 +80,7 @@ const CandlestickChart = ({
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
 
-    // Handle click for range selection using ref to avoid stale closure
+    // Handle click for range selection
     chart.subscribeClick((param) => {
       if (!param.time) return;
       
@@ -88,11 +95,10 @@ const CandlestickChart = ({
         selectionStateRef.current = { start: clickTime, end: null, isSelecting: true };
         setDisplayState({ start: clickTime, end: null, isSelecting: true });
       } else {
-        // Complete selection - we have start but no end
+        // Complete selection
         const startTime = currentState.start;
         const endTime = clickTime;
         
-        // Ensure start < end
         const [finalStart, finalEnd] = startTime < endTime 
           ? [startTime, endTime] 
           : [endTime, startTime];
@@ -100,9 +106,9 @@ const CandlestickChart = ({
         selectionStateRef.current = { start: finalStart, end: finalEnd, isSelecting: false };
         setDisplayState({ start: finalStart, end: finalEnd, isSelecting: false });
         
-        // Call parent callback
-        if (onRangeSelect) {
-          onRangeSelect({
+        // Call parent callback using ref to avoid stale closure
+        if (onRangeSelectRef.current) {
+          onRangeSelectRef.current({
             start: new Date(finalStart * 1000),
             end: new Date(finalEnd * 1000)
           });
@@ -122,10 +128,15 @@ const CandlestickChart = ({
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      if (chartRef.current) {
+        chartRef.current.remove();
+        chartRef.current = null;
+        candleSeriesRef.current = null;
+      }
     };
-  }, [height, onRangeSelect]);
+  }, [height]); // Only recreate on height change
 
+  // Update data without recreating chart
   useEffect(() => {
     if (candleSeriesRef.current && data && data.length > 0) {
       candleSeriesRef.current.setData(data);
@@ -171,14 +182,12 @@ const CandlestickChart = ({
               <span className="px-2 py-1 bg-[#B04832]/10 rounded text-[#B04832] font-medium">
                 {formatDate(displayState.end)}
               </span>
-              <span className="text-xs text-[#7A6A5C] ml-2">
-                (tarihlere uygulandı)
-              </span>
+              <span className="text-xs text-[#6D7C3B] ml-2">✓ tarihlere uygulandı</span>
             </div>
           )}
           {!displayState.start && !displayState.isSelecting && (
             <span className="text-sm text-[#A89F91]">
-              Grafik üzerinde tıklayarak tarih aralığı seçin
+              Grafik üzerinde tıklayarak tarih aralığı seçebilirsiniz
             </span>
           )}
         </div>
