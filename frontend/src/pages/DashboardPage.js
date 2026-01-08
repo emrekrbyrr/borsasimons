@@ -122,8 +122,8 @@ const DashboardPage = () => {
                     <BarChart3 className="w-6 h-6 text-[#C86F4A]" />
                   </div>
                   <div>
-                    <p className="text-sm text-[#7A6A5C]">BIST 100</p>
-                    <p className="text-2xl font-bold text-[#2E2620]">100</p>
+                    <p className="text-sm text-[#7A6A5C]">BIST</p>
+                    <p className="text-2xl font-bold text-[#2E2620]">{symbols.length}</p>
                     <p className="text-xs text-[#7A6A5C]">Takip Edilen Hisse</p>
                   </div>
                 </div>
