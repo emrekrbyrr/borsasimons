@@ -60,6 +60,8 @@ const AnalysisPage = () => {
   const [similarStocks, setSimilarStocks] = useState([]);
   const [selectedSimilar, setSelectedSimilar] = useState(null);
   const [minSimilarity, setMinSimilarity] = useState([70]);
+  const [searchMode, setSearchMode] = useState('full'); // 'full' or 'partial'
+  const [patternPercent, setPatternPercent] = useState([30]);
   
   const { symbol, startDate, endDate } = location.state || {};
 
@@ -89,22 +91,43 @@ const AnalysisPage = () => {
   const findSimilarStocks = async () => {
     setSearchingSimular(true);
     try {
-      const response = await axios.post(
-        `${API_URL}/stocks/find-similar`,
-        {
-          symbol,
-          start_date: startDate,
-          end_date: endDate,
-          min_similarity: minSimilarity[0] / 100,
-          limit: 20
-        },
-        { headers: getAuthHeader() }
-      );
+      let response;
+      
+      if (searchMode === 'partial') {
+        // Devam eden kalıp araması
+        response = await axios.post(
+          `${API_URL}/stocks/find-partial-match`,
+          {
+            symbol,
+            start_date: startDate,
+            end_date: endDate,
+            min_similarity: minSimilarity[0] / 100,
+            pattern_start_percent: patternPercent[0],
+            limit: 20
+          },
+          { headers: getAuthHeader() }
+        );
+      } else {
+        // Tam kalıp araması
+        response = await axios.post(
+          `${API_URL}/stocks/find-similar`,
+          {
+            symbol,
+            start_date: startDate,
+            end_date: endDate,
+            min_similarity: minSimilarity[0] / 100,
+            limit: 20
+          },
+          { headers: getAuthHeader() }
+        );
+      }
+      
       setSimilarStocks(response.data);
       if (response.data.length === 0) {
         toast.info('Benzer hisse bulunamadı. Eşik değerini düşürmeyi deneyin.');
       } else {
-        toast.success(`${response.data.length} benzer hisse bulundu`);
+        const modeText = searchMode === 'partial' ? 'devam eden kalıp' : 'benzer kalıp';
+        toast.success(`${response.data.length} ${modeText} bulundu`);
       }
     } catch (error) {
       toast.error('Benzer hisse aranırken hata oluştu');
