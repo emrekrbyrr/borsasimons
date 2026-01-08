@@ -787,6 +787,33 @@ const AnalysisPage = () => {
                     </div>
                   </>
                 )}
+                {/* Kalıptan Sonra Ne Oldu */}
+                {(compareStock.after_pattern_1m !== null || compareStock.after_pattern_3m !== null) && (
+                  <>
+                    <div className="w-px h-12 bg-[#E6DCCF]" />
+                    <div className="text-center">
+                      <p className="text-sm text-[#7A6A5C]">Kalıptan Sonra</p>
+                      <div className="flex gap-4 mt-1">
+                        {compareStock.after_pattern_1m !== null && (
+                          <div>
+                            <p className="text-xs text-[#7A6A5C]">1 Ay</p>
+                            <p className={`text-xl font-bold ${compareStock.after_pattern_1m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                              {compareStock.after_pattern_1m >= 0 ? '+' : ''}{compareStock.after_pattern_1m}%
+                            </p>
+                          </div>
+                        )}
+                        {compareStock.after_pattern_3m !== null && (
+                          <div>
+                            <p className="text-xs text-[#7A6A5C]">3 Ay</p>
+                            <p className={`text-xl font-bold ${compareStock.after_pattern_3m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                              {compareStock.after_pattern_3m >= 0 ? '+' : ''}{compareStock.after_pattern_3m}%
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Side by Side Charts */}
