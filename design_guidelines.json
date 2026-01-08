@@ -1,0 +1,155 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "BIST Analiz - Organic Fintech",
+      "archetype": "Organic & Earthy",
+      "vibe": "Grounded, Professional, Calm, Analytical",
+      "principles": [
+        "Fusion: Pinterest Aesthetics x Fintech Precision",
+        "Emotion: Calm confidence over high-frequency stress",
+        "Content: Data is the hero, but the frame is art",
+        "Contrast: Warm backgrounds vs Sharp Data"
+      ]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Playfair Display, serif",
+        "body": "Manrope, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "scale": {
+        "h1": "text-4xl md:text-5xl font-bold tracking-tight",
+        "h2": "text-3xl md:text-4xl font-semibold tracking-tight",
+        "h3": "text-2xl font-medium",
+        "body": "text-base leading-relaxed",
+        "small": "text-sm font-medium tracking-wide uppercase"
+      },
+      "imports": [
+        "@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');"
+      ]
+    },
+    "colors": {
+      "palette": {
+        "background": {
+          "default": "#F6F1EA",
+          "paper": "#FFFFFF",
+          "subtle": "#E8D9C7"
+        },
+        "text": {
+          "primary": "#2E2620",
+          "secondary": "#7A6A5C",
+          "muted": "#A89F91"
+        },
+        "primary": {
+          "main": "#C86F4A",
+          "hover": "#B05D3A",
+          "foreground": "#FFFFFF"
+        },
+        "secondary": {
+          "main": "#6D7C3B",
+          "hover": "#5C6B2F",
+          "foreground": "#FFFFFF"
+        },
+        "accent": {
+          "main": "#B04832",
+          "foreground": "#FFFFFF"
+        },
+        "border": {
+          "default": "#E6DCCF",
+          "active": "#C86F4A"
+        }
+      },
+      "chart_colors": [
+        "#C86F4A",
+        "#6D7C3B",
+        "#2E2620",
+        "#B04832",
+        "#E8D9C7"
+      ]
+    },
+    "spacing": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "section_padding": "py-12 md:py-20",
+      "card_padding": "p-6 md:p-8",
+      "grid_gap": "gap-6 md:gap-8"
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-[#C86F4A] text-white hover:bg-[#B05D3A] rounded-full px-8 py-3 font-medium transition-all shadow-sm hover:shadow-md",
+        "secondary": "bg-[#F6F1EA] text-[#2E2620] border border-[#E6DCCF] hover:bg-[#E8D9C7] rounded-full px-8 py-3 font-medium transition-all",
+        "ghost": "text-[#7A6A5C] hover:text-[#2E2620] hover:bg-[#E8D9C7]/50 rounded-lg px-4 py-2 transition-all"
+      },
+      "cards": {
+        "default": "bg-white rounded-xl border border-[#E6DCCF] shadow-sm hover:shadow-md transition-all duration-300",
+        "interactive": "cursor-pointer hover:-translate-y-1 hover:border-[#C86F4A]/30"
+      },
+      "inputs": {
+        "default": "bg-white border border-[#E6DCCF] rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#C86F4A]/20 focus:border-[#C86F4A] outline-none transition-all placeholder:text-[#A89F91]"
+      }
+    },
+    "layout_strategies": {
+      "dashboard": "Control Room Grid: grid grid-cols-1 md:grid-cols-12 gap-6. Sidebar: col-span-2. Main: col-span-10.",
+      "marketing": "Tetris Grid: Asymmetrical layouts with large hero sections and overlapping elements.",
+      "detail_view": "Split View: Left 70% (Chart/Analysis), Right 30% (Stats/Actions)."
+    },
+    "visual_enhancers": {
+      "shadows": "shadow-[0_2px_8px_rgba(46,38,32,0.04)]",
+      "glassmorphism": "backdrop-blur-md bg-white/80 border border-white/20",
+      "gradients": "No gradients. Use solid colors and textures.",
+      "textures": "Subtle noise overlay on backgrounds (optional)."
+    }
+  },
+  "assets": {
+    "images": {
+      "login_bg": {
+        "url": "https://images.unsplash.com/photo-1762433813475-e6b761cc23d0?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Abstract geometric shapes in beige and brown",
+        "usage": "Login/Register page background (cover)"
+      },
+      "dashboard_empty": {
+        "url": "https://images.unsplash.com/photo-1761083042622-9a48acd3fcc6?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Minimalist plant on wood desk",
+        "usage": "Empty state or welcome widget background"
+      },
+      "chart_placeholder": {
+        "url": "https://images.unsplash.com/photo-1667964394228-7b0a05156df7?crop=entropy&cs=srgb&fm=jpg&q=85",
+        "alt": "Abstract line texture",
+        "usage": "Placeholder for loading charts"
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px, color #2E2620"
+    }
+  },
+  "instructions_to_main_agent": {
+    "general": [
+      "Implement the 'Organic & Earthy' theme strictly. Do not revert to default blue/gray SaaS colors.",
+      "Use 'Playfair Display' for all H1-H3 headings to maintain the editorial feel.",
+      "Use 'Manrope' for all body text and UI elements.",
+      "Ensure high contrast for data visualization. Use the defined chart_colors.",
+      "Use Recharts for all charts. Customize the Tooltip and CartesianGrid to match the theme (no harsh lines).",
+      "For the 'Similarity Analysis', use a clean list or card layout with a 'Match Score' badge in the primary accent color.",
+      "All interactive elements must have `data-testid` attributes."
+    ],
+    "pages": {
+      "login": "Split screen. Left: Image (login_bg). Right: Clean form with 'Playfair Display' welcome message.",
+      "dashboard": "Sidebar navigation (collapsible on mobile). Top bar with date range picker. Main content area with 'Bento' grid widgets.",
+      "analysis": "Large main chart area. Below: 'Similar Stocks' horizontal scroll or grid. Right panel: Key stats (Dip/Peak points).",
+      "profile": "Simple card layout for user details and saved preferences."
+    },
+    "components_to_customize": [
+      "Button: Apply rounded-full and warm colors.",
+      "Card: Remove default heavy shadows, use subtle border.",
+      "Input: Warm border colors, focus ring in Terracotta.",
+      "Select/Dropdown: Match input styling."
+    ]
+  },
+  "universal_guidelines": [
+    "Do not use 'Inter' font.",
+    "Do not use default blue (#3b82f6) for primary actions.",
+    "Ensure all text has sufficient contrast against the warm backgrounds.",
+    "Use 'sonner' for notifications.",
+    "Keep animations subtle (fade-in, slide-up) - no bouncing or excessive motion."
+  ]
+}
