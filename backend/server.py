@@ -301,6 +301,104 @@ def calculate_similarity(prices1: np.ndarray, prices2: np.ndarray) -> tuple:
     return similarity, correlation
 
 
+def find_best_matching_window(ref_prices: np.ndarray, target_prices: np.ndarray, target_dates: list) -> dict:
+    """
+    Sliding window ile hedef hissenin tüm geçmişinde referans kalıba en benzer dönemi bul.
+    
+    ref_prices: Referans kalıbın fiyatları
+    target_prices: Hedef hissenin TÜM geçmiş fiyatları
+    target_dates: Hedef hissenin tarihleri
+    
+    Returns: {
+        'similarity': float,
+        'correlation': float,
+        'start_idx': int,
+        'end_idx': int,
+        'start_date': str,
+        'end_date': str,
+        'prices': np.ndarray,
+        'after_1m_change': float or None,
+        'after_3m_change': float or None
+    }
+    """
+    if len(ref_prices) < 10 or len(target_prices) < len(ref_prices):
+        return None
+    
+    window_size = len(ref_prices)
+    best_match = {
+        'similarity': 0,
+        'correlation': 0,
+        'start_idx': 0,
+        'end_idx': window_size,
+        'start_date': '',
+        'end_date': '',
+        'prices': None,
+        'after_1m_change': None,
+        'after_3m_change': None,
+        'pattern_end_price': None
+    }
+    
+    # Normalize reference pattern once
+    ref_norm = normalize_prices(ref_prices)
+    
+    # Slide window across target history
+    # Step size: her 5 günde bir kontrol et (performans için)
+    step_size = max(1, window_size // 10)
+    
+    for start_idx in range(0, len(target_prices) - window_size + 1, step_size):
+        end_idx = start_idx + window_size
+        window_prices = target_prices[start_idx:end_idx]
+        
+        # Normalize window
+        window_norm = normalize_prices(window_prices)
+        
+        # Calculate similarity
+        distance = euclidean(ref_norm, window_norm)
+        max_distance = np.sqrt(len(ref_norm))
+        similarity = max(0, 1 - (distance / max_distance))
+        
+        if similarity > best_match['similarity']:
+            # Calculate correlation
+            try:
+                correlation, _ = pearsonr(ref_norm, window_norm)
+                if np.isnan(correlation):
+                    correlation = 0.0
+            except:
+                correlation = 0.0
+            
+            # Kalıptan sonraki performansı hesapla
+            after_1m_change = None
+            after_3m_change = None
+            pattern_end_price = window_prices[-1]
+            
+            # 1 ay sonra (~22 işlem günü)
+            after_1m_idx = end_idx + 22
+            if after_1m_idx < len(target_prices):
+                after_1m_price = target_prices[after_1m_idx]
+                after_1m_change = round((after_1m_price - pattern_end_price) / pattern_end_price * 100, 2)
+            
+            # 3 ay sonra (~66 işlem günü)
+            after_3m_idx = end_idx + 66
+            if after_3m_idx < len(target_prices):
+                after_3m_price = target_prices[after_3m_idx]
+                after_3m_change = round((after_3m_price - pattern_end_price) / pattern_end_price * 100, 2)
+            
+            best_match = {
+                'similarity': similarity,
+                'correlation': correlation,
+                'start_idx': start_idx,
+                'end_idx': end_idx,
+                'start_date': target_dates[start_idx] if start_idx < len(target_dates) else '',
+                'end_date': target_dates[end_idx - 1] if end_idx - 1 < len(target_dates) else '',
+                'prices': window_prices,
+                'after_1m_change': after_1m_change,
+                'after_3m_change': after_3m_change,
+                'pattern_end_price': round(pattern_end_price, 2)
+            }
+    
+    return best_match if best_match['similarity'] > 0 else None
+
+
 def calculate_partial_similarity(ref_prices: np.ndarray, target_prices: np.ndarray, start_percent: float = 30) -> tuple:
     """
     Kalıbın başlangıç kısmını karşılaştır - devam eden kalıpları bulmak için.
