@@ -432,15 +432,6 @@ const DashboardPage = () => {
                   </Button>
                 </div>
               </div>
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Search className="w-4 h-4 mr-2" />
-                  )}
-                  Analiz Et
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
