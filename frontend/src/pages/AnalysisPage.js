@@ -242,77 +242,38 @@ const AnalysisPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Chart Area */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Price Chart */}
+                {/* Price Chart - TradingView Style */}
                 <Card className="card-organic" data-testid="price-chart-card">
                   <CardHeader>
-                    <CardTitle className="font-['Playfair_Display'] text-[#2E2620]">
-                      Fiyat Grafiği
-                    </CardTitle>
-                    <CardDescription className="text-[#7A6A5C]">
-                      Dip ve tepe noktaları işaretli
-                    </CardDescription>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="font-['Playfair_Display'] text-[#2E2620]">
+                          Fiyat Grafiği
+                        </CardTitle>
+                        <CardDescription className="text-[#7A6A5C]">
+                          Dip ve tepe noktaları işaretli mum grafiği
+                        </CardDescription>
+                      </div>
+                      <Select value={timeInterval} onValueChange={handleIntervalChange}>
+                        <SelectTrigger className="w-[120px] border-[#E6DCCF]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1h">1 Saatlik</SelectItem>
+                          <SelectItem value="4h">4 Saatlik</SelectItem>
+                          <SelectItem value="1d">Günlük</SelectItem>
+                          <SelectItem value="1wk">Haftalık</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-[400px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#E6DCCF" />
-                          <XAxis 
-                            dataKey="date" 
-                            tick={{ fill: '#7A6A5C', fontSize: 12 }}
-                            tickFormatter={(value) => value.slice(5)}
-                          />
-                          <YAxis 
-                            tick={{ fill: '#7A6A5C', fontSize: 12 }}
-                            tickFormatter={(value) => `₺${value}`}
-                          />
-                          <Tooltip content={<CustomTooltip />} />
-                          <Legend />
-                          <Line
-                            type="monotone"
-                            dataKey="price"
-                            stroke="#C86F4A"
-                            strokeWidth={2}
-                            dot={false}
-                            name="Kapanış Fiyatı"
-                          />
-                          {/* Peak markers */}
-                          {peakData.map((peak, i) => (
-                            <ReferenceDot
-                              key={`peak-${i}`}
-                              x={peak.date}
-                              y={peak.price}
-                              r={6}
-                              fill="#6D7C3B"
-                              stroke="#fff"
-                              strokeWidth={2}
-                            />
-                          ))}
-                          {/* Trough markers */}
-                          {troughData.map((trough, i) => (
-                            <ReferenceDot
-                              key={`trough-${i}`}
-                              x={trough.date}
-                              y={trough.price}
-                              r={6}
-                              fill="#B04832"
-                              stroke="#fff"
-                              strokeWidth={2}
-                            />
-                          ))}
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="flex items-center justify-center gap-6 mt-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#6D7C3B]" />
-                        <span className="text-sm text-[#7A6A5C]">Tepe Noktası</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-[#B04832]" />
-                        <span className="text-sm text-[#7A6A5C]">Dip Noktası</span>
-                      </div>
-                    </div>
+                    <AnalysisCandlestickChart
+                      data={candleData}
+                      loading={chartLoading}
+                      peaksTroughs={analysis?.peaks_troughs || []}
+                      height={400}
+                    />
                   </CardContent>
                 </Card>
 
