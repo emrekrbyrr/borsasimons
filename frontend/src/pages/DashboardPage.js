@@ -101,6 +101,27 @@ const DashboardPage = () => {
   const handleSymbolChange = (value) => {
     setSelectedSymbol(value);
     fetchQuickStats(value);
+    fetchCandlestickData(value);
+  };
+
+  const handleIntervalChange = (interval) => {
+    setTimeInterval(interval);
+    if (selectedSymbol) {
+      fetchCandlestickData(selectedSymbol, interval, chartPeriod);
+    }
+  };
+
+  const handlePeriodChange = (period) => {
+    setChartPeriod(period);
+    if (selectedSymbol) {
+      fetchCandlestickData(selectedSymbol, timeInterval, period);
+    }
+  };
+
+  const handleRangeSelect = (range) => {
+    setStartDate(range.start);
+    setEndDate(range.end);
+    toast.success(`Tarih aralığı seçildi: ${format(range.start, 'dd MMM yyyy', { locale: tr })} - ${format(range.end, 'dd MMM yyyy', { locale: tr })}`);
   };
 
   const handleAnalyze = () => {
