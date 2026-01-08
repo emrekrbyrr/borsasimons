@@ -143,7 +143,7 @@ class BISTAnalysisAPITester:
             self.log_test("Get User Profile", False, details, response)
 
     def test_get_bist_symbols(self):
-        """Test getting BIST 100 symbols"""
+        """Test getting BIST symbols - should be expanded from 100 to 444+"""
         if not self.token:
             self.log_test("Get BIST Symbols", False, "No authentication token")
             return
@@ -152,10 +152,25 @@ class BISTAnalysisAPITester:
         
         if success and response.get('symbols'):
             symbol_count = len(response['symbols'])
-            if symbol_count == 100:
-                self.log_test("Get BIST Symbols", True, f"Retrieved {symbol_count} symbols")
+            symbols = response['symbols']
+            
+            # Check if list has been expanded (should be more than 100)
+            if symbol_count > 100:
+                self.log_test("Get BIST Symbols", True, f"Retrieved {symbol_count} symbols (expanded from 100)")
             else:
-                self.log_test("Get BIST Symbols", True, f"Retrieved {symbol_count} symbols (expected 100)")
+                self.log_test("Get BIST Symbols", False, f"Only {symbol_count} symbols found, expected >100")
+                
+            # Check for specific requested stocks
+            missing_stocks = []
+            required_stocks = ['TGSAS', 'DESPC']
+            for stock in required_stocks:
+                if stock not in symbols:
+                    missing_stocks.append(stock)
+            
+            if missing_stocks:
+                self.log_test("Required Stocks Check", False, f"Missing stocks: {missing_stocks}")
+            else:
+                self.log_test("Required Stocks Check", True, f"All required stocks found: {required_stocks}")
         else:
             self.log_test("Get BIST Symbols", False, details, response)
 
