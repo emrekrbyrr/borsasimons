@@ -698,22 +698,33 @@ const AnalysisPage = () => {
                         </div>
                       )}
 
-                      <Button
-                        onClick={() => {
-                          navigate('/analysis', {
-                            state: {
-                              symbol: selectedSimilar.symbol,
-                              startDate,
-                              endDate
-                            }
-                          });
-                          window.location.reload();
-                        }}
-                        className="w-full bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full mt-4"
-                        data-testid="analyze-similar-btn"
-                      >
-                        Bu Hisseyi Analiz Et
-                      </Button>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          onClick={() => openCompareModal(selectedSimilar)}
+                          variant="outline"
+                          className="flex-1 border-[#6D7C3B] text-[#6D7C3B] hover:bg-[#6D7C3B]/10 rounded-full"
+                          data-testid="compare-btn"
+                        >
+                          <GitCompare className="w-4 h-4 mr-2" />
+                          Karşılaştır
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            navigate('/analysis', {
+                              state: {
+                                symbol: selectedSimilar.symbol,
+                                startDate,
+                                endDate
+                              }
+                            });
+                            window.location.reload();
+                          }}
+                          className="flex-1 bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full"
+                          data-testid="analyze-similar-btn"
+                        >
+                          Analiz Et
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -722,6 +733,161 @@ const AnalysisPage = () => {
           )}
         </div>
       </main>
+
+      {/* Comparison Modal */}
+      <Dialog open={compareModalOpen} onOpenChange={setCompareModalOpen}>
+        <DialogContent className="max-w-[95vw] w-[1400px] max-h-[90vh] overflow-y-auto bg-[#F6F1EA]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-['Playfair_Display'] text-[#2E2620] flex items-center gap-3">
+              <GitCompare className="w-6 h-6 text-[#C86F4A]" />
+              Kalıp Karşılaştırması
+            </DialogTitle>
+            <DialogDescription className="text-[#7A6A5C]">
+              {symbol} ile {compareStock?.symbol} arasındaki benzer kalıpların karşılaştırması
+            </DialogDescription>
+          </DialogHeader>
+          
+          {compareStock && (
+            <div className="mt-4">
+              {/* Similarity Stats */}
+              <div className="flex items-center justify-center gap-8 mb-6 p-4 bg-white rounded-xl border border-[#E6DCCF]">
+                <div className="text-center">
+                  <p className="text-sm text-[#7A6A5C]">Benzerlik Skoru</p>
+                  <p className="text-3xl font-bold text-[#6D7C3B]">{compareStock.similarity_score}%</p>
+                </div>
+                <div className="w-px h-12 bg-[#E6DCCF]" />
+                <div className="text-center">
+                  <p className="text-sm text-[#7A6A5C]">Korelasyon</p>
+                  <p className="text-3xl font-bold text-[#C86F4A]">{compareStock.correlation}%</p>
+                </div>
+                {compareStock.pattern_progress && (
+                  <>
+                    <div className="w-px h-12 bg-[#E6DCCF]" />
+                    <div className="text-center">
+                      <p className="text-sm text-[#7A6A5C]">Kalıp İlerlemesi</p>
+                      <p className="text-3xl font-bold text-[#2E2620]">{compareStock.pattern_progress}%</p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Side by Side Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Reference Stock Chart */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-['Playfair_Display'] text-[#2E2620]">
+                          {symbol}
+                          <Badge className="ml-2 bg-[#6D7C3B]/10 text-[#6D7C3B] border-[#6D7C3B]/30">
+                            Referans
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-[#7A6A5C]">
+                          {startDate} - {endDate}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <AnalysisCandlestickChart
+                      data={candleData}
+                      loading={chartLoading}
+                      peaksTroughs={analysis?.peaks_troughs || []}
+                      height={300}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Similar Stock Chart */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-['Playfair_Display'] text-[#2E2620]">
+                          {compareStock.symbol}
+                          <Badge className="ml-2 bg-[#C86F4A]/10 text-[#C86F4A] border-[#C86F4A]/30">
+                            Benzer
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-[#7A6A5C]">
+                          {compareStock.start_date || 'Güncel veri'} - {compareStock.end_date || ''}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <AnalysisCandlestickChart
+                      data={compareCandleData}
+                      loading={compareLoading}
+                      peaksTroughs={compareStock.peaks_troughs || []}
+                      height={300}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Peak/Trough Comparison */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {/* Reference Peaks/Troughs */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-[#2E2620]">
+                      {symbol} Dip/Tepe Noktaları
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {analysis?.peaks_troughs?.slice(0, 6).map((pt, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm p-2 bg-[#F6F1EA] rounded">
+                          <span className="flex items-center gap-2">
+                            {pt.point_type === 'tepe' ? (
+                              <TrendingUp className="w-4 h-4 text-[#6D7C3B]" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4 text-[#B04832]" />
+                            )}
+                            {pt.point_number}. {pt.point_type === 'tepe' ? 'Tepe' : 'Dip'}
+                          </span>
+                          <span className="text-[#7A6A5C]">{pt.date}</span>
+                          <span className="font-medium">₺{pt.price?.toLocaleString('tr-TR')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Similar Stock Peaks/Troughs */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-[#2E2620]">
+                      {compareStock.symbol} Dip/Tepe Noktaları
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {compareStock.peaks_troughs?.slice(0, 6).map((pt, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm p-2 bg-[#F6F1EA] rounded">
+                          <span className="flex items-center gap-2">
+                            {pt.point_type === 'tepe' ? (
+                              <TrendingUp className="w-4 h-4 text-[#6D7C3B]" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4 text-[#B04832]" />
+                            )}
+                            {pt.point_number}. {pt.point_type === 'tepe' ? 'Tepe' : 'Dip'}
+                          </span>
+                          <span className="text-[#7A6A5C]">{pt.date}</span>
+                          <span className="font-medium">₺{pt.price?.toLocaleString('tr-TR')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
