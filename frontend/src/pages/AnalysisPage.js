@@ -37,14 +37,39 @@ const AnalysisPage = () => {
   const [minSimilarity, setMinSimilarity] = useState([70]);
   const [searchMode, setSearchMode] = useState('full'); // 'full' or 'partial'
   const [patternPercent, setPatternPercent] = useState([30]);
+  const [candleData, setCandleData] = useState([]);
+  const [chartLoading, setChartLoading] = useState(false);
+  const [timeInterval, setTimeInterval] = useState('1d');
   
   const { symbol, startDate, endDate } = location.state || {};
 
   useEffect(() => {
     if (symbol && startDate && endDate) {
       fetchAnalysis();
+      fetchCandlestickData();
     }
   }, [symbol, startDate, endDate]);
+
+  const fetchCandlestickData = async (interval = timeInterval) => {
+    if (!symbol) return;
+    setChartLoading(true);
+    try {
+      const response = await axios.get(
+        `${API_URL}/stocks/${symbol}/candlestick?interval=${interval}&period=2y`,
+        { headers: getAuthHeader() }
+      );
+      setCandleData(response.data.candles);
+    } catch (error) {
+      console.error('Candlestick error:', error);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  const handleIntervalChange = (interval) => {
+    setTimeInterval(interval);
+    fetchCandlestickData(interval);
+  };
 
   const fetchAnalysis = async () => {
     setLoading(true);
