@@ -596,8 +596,11 @@ async def find_partial_match_stocks(request: PartialMatchRequest, current_user: 
     end_date_obj = datetime.strptime(request.end_date, '%Y-%m-%d')
     recent_start = (end_date_obj - timedelta(days=180)).strftime('%Y-%m-%d')
     
-    # Compare with all other BIST stocks
-    for symbol in BIST_100_SYMBOLS:
+    # Performans için sadece ana BIST 100 hisselerini kontrol et
+    main_stocks = BIST_100_SYMBOLS[:150]  # İlk 150 hisse (en likid olanlar)
+    
+    # Compare with main BIST stocks for performance
+    for symbol in main_stocks:
         if symbol == request.symbol:
             continue
         
