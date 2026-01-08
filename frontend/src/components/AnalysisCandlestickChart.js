@@ -87,6 +87,7 @@ const AnalysisCandlestickChart = ({
         chartRef.current.remove();
         chartRef.current = null;
         candleSeriesRef.current = null;
+        markersApiRef.current = null;
       }
     };
   }, [height]);
