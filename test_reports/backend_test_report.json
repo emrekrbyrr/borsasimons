@@ -1,9 +1,9 @@
 {
   "summary": {
     "total_tests": 15,
-    "passed_tests": 11,
-    "failed_tests": 4,
-    "success_rate": 73.33
+    "passed_tests": 13,
+    "failed_tests": 2,
+    "success_rate": 86.67
   },
   "test_results": [
     {
@@ -11,106 +11,106 @@
       "success": true,
       "details": "API is healthy",
       "response_data": null,
-      "timestamp": "2026-01-08T20:58:59.682551"
+      "timestamp": "2026-01-08T21:23:57.302774"
     },
     {
       "test_name": "User Registration",
       "success": true,
-      "details": "User created with ID: c97329d7-dc2b-4b62-ac34-bfc60bbcb9cf",
+      "details": "User created with ID: aa591d0f-f4d4-48c8-a872-bf0821382aae",
       "response_data": null,
-      "timestamp": "2026-01-08T20:58:59.959578"
+      "timestamp": "2026-01-08T21:23:57.564532"
     },
     {
       "test_name": "User Login",
       "success": true,
       "details": "Login successful",
       "response_data": null,
-      "timestamp": "2026-01-08T20:59:00.226780"
+      "timestamp": "2026-01-08T21:23:58.168726"
     },
     {
       "test_name": "Get User Profile",
       "success": true,
-      "details": "Profile retrieved for test_user_205859@test.com",
+      "details": "Profile retrieved for test_user_212357@test.com",
       "response_data": null,
-      "timestamp": "2026-01-08T20:59:00.268475"
+      "timestamp": "2026-01-08T21:23:58.238209"
     },
     {
       "test_name": "Get BIST Symbols",
       "success": true,
       "details": "Retrieved 444 symbols (expanded from 100)",
       "response_data": null,
-      "timestamp": "2026-01-08T20:59:00.312606"
+      "timestamp": "2026-01-08T21:23:58.285313"
     },
     {
       "test_name": "Required Stocks Check",
       "success": true,
       "details": "All required stocks found: ['TGSAS', 'DESPC']",
       "response_data": null,
-      "timestamp": "2026-01-08T20:59:00.312644"
+      "timestamp": "2026-01-08T21:23:58.285488"
     },
     {
       "test_name": "Quick Stock Info",
       "success": true,
       "details": "AKBNK current price: \u20ba72.7",
       "response_data": null,
-      "timestamp": "2026-01-08T20:59:00.771980"
+      "timestamp": "2026-01-08T21:23:58.959053"
     },
     {
       "test_name": "Stock Analysis",
       "success": true,
       "details": "Analysis complete: 249 price points, 4 peaks, 1 troughs",
       "response_data": null,
-      "timestamp": "2026-01-08T20:59:00.932745"
+      "timestamp": "2026-01-08T21:23:59.134731"
     },
     {
       "test_name": "Find Similar Stocks",
       "success": false,
       "details": "Request failed: HTTPSConnectionPool(host='patternfinder-3.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
       "response_data": {},
-      "timestamp": "2026-01-08T20:59:30.987874"
+      "timestamp": "2026-01-08T21:24:29.189247"
     },
     {
       "test_name": "Find Partial Match Stocks",
       "success": false,
       "details": "Request failed: HTTPSConnectionPool(host='patternfinder-3.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
       "response_data": {},
-      "timestamp": "2026-01-08T21:00:01.085010"
+      "timestamp": "2026-01-08T21:24:59.315416"
     },
     {
       "test_name": "TGSAS Stock Analysis",
-      "success": false,
-      "details": "Request failed: HTTPSConnectionPool(host='patternfinder-3.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "response_data": {},
-      "timestamp": "2026-01-08T21:00:31.211598"
+      "success": true,
+      "details": "TGSAS analysis successful",
+      "response_data": null,
+      "timestamp": "2026-01-08T21:25:04.421221"
     },
     {
       "test_name": "DESPC Stock Analysis",
-      "success": false,
-      "details": "Request failed: HTTPSConnectionPool(host='patternfinder-3.preview.emergentagent.com', port=443): Read timed out. (read timeout=30)",
-      "response_data": {},
-      "timestamp": "2026-01-08T21:01:01.300308"
+      "success": true,
+      "details": "DESPC analysis successful",
+      "response_data": null,
+      "timestamp": "2026-01-08T21:25:04.570474"
     },
     {
       "test_name": "Save Analysis",
       "success": true,
-      "details": "Analysis saved with ID: eb7236fc-8451-4429-8824-177b73f4a8a1",
+      "details": "Analysis saved with ID: 478c783e-4a6b-485c-af28-4f56ff9c8e12",
       "response_data": null,
-      "timestamp": "2026-01-08T21:01:05.022733"
+      "timestamp": "2026-01-08T21:25:04.609428"
     },
     {
       "test_name": "Get Saved Analyses",
       "success": true,
       "details": "Retrieved 1 saved analyses",
       "response_data": null,
-      "timestamp": "2026-01-08T21:01:05.064716"
+      "timestamp": "2026-01-08T21:25:04.658850"
     },
     {
       "test_name": "Invalid Authentication",
       "success": true,
       "details": "Properly rejected invalid token",
       "response_data": null,
-      "timestamp": "2026-01-08T21:01:05.101015"
+      "timestamp": "2026-01-08T21:25:04.697475"
     }
   ],
-  "timestamp": "2026-01-08T21:01:05.101069"
+  "timestamp": "2026-01-08T21:25:04.697533"
 }
