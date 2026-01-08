@@ -40,6 +40,16 @@ BIST 100 hisselerinde benzer fiyat kalıplarını analiz eden web platformu. Kul
 - **Dashboard Tarih Seçimi Vurgulaması**: Seçilen başlangıç ve bitiş tarihleri grafikte marker olarak gösteriliyor
 - Başlangıç marker'ı (yeşil ok yukarı) ve Bitiş marker'ı (kırmızı ok aşağı)
 
+### İterasyon 4 - Sliding Window Algoritması (08 Ocak 2026)
+- **Tarihsel Kalıp Araması**: Benzer kalıp araması artık her hissenin son 7 yıllık TÜM geçmişinde yapılıyor
+- **Sliding Window**: Her hissenin geçmişinde referans kalıpla aynı uzunlukta pencereler oluşturup en benzeri bulunuyor
+- **Farklı Tarihler**: Benzer hisseler artık FARKLI tarihlerde bulunuyor (2022, 2023, 2024 vb.)
+- **Kalıptan Sonra Ne Oldu**: Her benzer hisse için:
+  - 1 Ay sonraki fiyat değişimi (%)
+  - 3 Ay sonraki fiyat değişimi (%)
+  - Kalıp sonu fiyatı
+- Kullanıcı artık benzer kalıp yapan hisselerin "geleceğini" tahmin edebilir
+
 ## Tech Stack
 - Backend: FastAPI, MongoDB, yfinance, scipy, scikit-learn
 - Frontend: React, Tailwind CSS, lightweight-charts v5.1.0, Shadcn/UI
