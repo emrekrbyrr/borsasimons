@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createChart, CrosshairMode } from 'lightweight-charts';
+import { createChart } from 'lightweight-charts';
 import { Button } from './ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -7,7 +7,6 @@ const CandlestickChart = ({
   data, 
   loading, 
   onRangeSelect,
-  selectedRange,
   height = 400 
 }) => {
   const chartContainerRef = useRef(null);
@@ -17,7 +16,6 @@ const CandlestickChart = ({
   const [selectionEnd, setSelectionEnd] = useState(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
-  // Initialize chart
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
@@ -34,7 +32,6 @@ const CandlestickChart = ({
         horzLines: { color: '#E6DCCF', style: 1 },
       },
       crosshair: {
-        mode: CrosshairMode.Normal,
         vertLine: {
           color: '#C86F4A',
           width: 1,
@@ -60,18 +57,11 @@ const CandlestickChart = ({
         timeVisible: true,
         secondsVisible: false,
       },
-      handleScroll: {
-        mouseWheel: true,
-        pressedMouseMove: true,
-      },
-      handleScale: {
-        axisPressedMouseMove: true,
-        mouseWheel: true,
-        pinch: true,
-      },
     });
 
-    const candleSeries = chart.addCandlestickSeries({
+    // Use addSeries with 'Candlestick' type for newer versions
+    const candleSeries = chart.addSeries({
+      type: 'Candlestick',
       upColor: '#6D7C3B',
       downColor: '#B04832',
       borderUpColor: '#6D7C3B',
@@ -87,22 +77,22 @@ const CandlestickChart = ({
     chart.subscribeClick((param) => {
       if (!param.time) return;
       
+      const clickTime = typeof param.time === 'object' 
+        ? new Date(param.time.year, param.time.month - 1, param.time.day).getTime() / 1000
+        : param.time;
+      
       if (!selectionStart || (selectionStart && selectionEnd)) {
-        // Start new selection
-        setSelectionStart(param.time);
+        setSelectionStart(clickTime);
         setSelectionEnd(null);
         setIsSelecting(true);
       } else {
-        // Complete selection
-        setSelectionEnd(param.time);
+        setSelectionEnd(clickTime);
         setIsSelecting(false);
         
-        // Call onRangeSelect with the dates
         if (onRangeSelect) {
           const startDate = new Date(selectionStart * 1000);
-          const endDate = new Date(param.time * 1000);
+          const endDate = new Date(clickTime * 1000);
           
-          // Ensure start is before end
           const [finalStart, finalEnd] = startDate < endDate 
             ? [startDate, endDate] 
             : [endDate, startDate];
@@ -115,7 +105,6 @@ const CandlestickChart = ({
       }
     });
 
-    // Handle resize
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -132,7 +121,6 @@ const CandlestickChart = ({
     };
   }, [height]);
 
-  // Update data
   useEffect(() => {
     if (candleSeriesRef.current && data && data.length > 0) {
       candleSeriesRef.current.setData(data);
@@ -140,14 +128,12 @@ const CandlestickChart = ({
     }
   }, [data]);
 
-  // Reset selection
   const resetSelection = useCallback(() => {
     setSelectionStart(null);
     setSelectionEnd(null);
     setIsSelecting(false);
   }, []);
 
-  // Format date for display
   const formatDate = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp * 1000);
@@ -160,7 +146,6 @@ const CandlestickChart = ({
 
   return (
     <div className="relative">
-      {/* Selection info bar */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-4">
           {isSelecting && (
@@ -194,7 +179,6 @@ const CandlestickChart = ({
         )}
       </div>
 
-      {/* Chart container */}
       <div 
         ref={chartContainerRef} 
         className="relative rounded-lg overflow-hidden border border-[#E6DCCF]"
@@ -207,9 +191,8 @@ const CandlestickChart = ({
         )}
       </div>
 
-      {/* Instructions */}
       <div className="mt-2 text-xs text-[#A89F91] text-center">
-        💡 Grafik üzerinde başlangıç ve bitiş tarihlerini seçmek için tıklayın
+        Grafik üzerinde başlangıç ve bitiş tarihlerini seçmek için tıklayın
       </div>
     </div>
   );
