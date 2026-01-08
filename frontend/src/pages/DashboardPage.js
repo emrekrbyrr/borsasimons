@@ -7,6 +7,7 @@ import CandlestickChart from '../components/CandlestickChart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Label } from '../components/ui/label';
+import { Calendar } from '../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
@@ -23,7 +24,8 @@ import {
   Loader2,
   Check,
   ChevronsUpDown,
-  CandlestickChart as CandleIcon
+  CandlestickChart as CandleIcon,
+  CalendarIcon
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
