@@ -380,7 +380,11 @@ class BISTAnalysisAPITester:
         
         # Analysis features
         self.test_find_similar_stocks()
-        self.test_custom_pattern_search()
+        self.test_find_partial_match_stocks()  # New partial match endpoint
+        
+        # Test specific stocks mentioned in requirements
+        self.test_tgsas_stock_analysis()
+        self.test_despc_stock_analysis()
         
         # Data persistence
         self.test_save_analysis()
