@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createChart } from 'lightweight-charts';
+import { createChart, CandlestickSeries } from 'lightweight-charts';
 import { Button } from './ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -59,9 +59,8 @@ const CandlestickChart = ({
       },
     });
 
-    // Use addSeries with 'Candlestick' type for newer versions
-    const candleSeries = chart.addSeries({
-      type: 'Candlestick',
+    // Version 5.0 API - use addSeries with CandlestickSeries
+    const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#6D7C3B',
       downColor: '#B04832',
       borderUpColor: '#6D7C3B',
