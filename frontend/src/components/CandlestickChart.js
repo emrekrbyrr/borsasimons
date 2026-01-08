@@ -12,9 +12,8 @@ const CandlestickChart = ({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
-  const [selectionStart, setSelectionStart] = useState(null);
-  const [selectionEnd, setSelectionEnd] = useState(null);
-  const [isSelecting, setIsSelecting] = useState(false);
+  const selectionStateRef = useRef({ start: null, end: null, isSelecting: false });
+  const [displayState, setDisplayState] = useState({ start: null, end: null, isSelecting: false });
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -62,7 +61,6 @@ const CandlestickChart = ({
       },
     });
 
-    // Version 5.0 API - use addSeries with CandlestickSeries
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: '#6D7C3B',
       downColor: '#B04832',
@@ -75,7 +73,7 @@ const CandlestickChart = ({
     chartRef.current = chart;
     candleSeriesRef.current = candleSeries;
 
-    // Handle click for range selection
+    // Handle click for range selection using ref to avoid stale closure
     chart.subscribeClick((param) => {
       if (!param.time) return;
       
@@ -83,25 +81,30 @@ const CandlestickChart = ({
         ? new Date(param.time.year, param.time.month - 1, param.time.day).getTime() / 1000
         : param.time;
       
-      if (!selectionStart || (selectionStart && selectionEnd)) {
-        setSelectionStart(clickTime);
-        setSelectionEnd(null);
-        setIsSelecting(true);
+      const currentState = selectionStateRef.current;
+      
+      if (!currentState.start || (currentState.start && currentState.end)) {
+        // Start new selection
+        selectionStateRef.current = { start: clickTime, end: null, isSelecting: true };
+        setDisplayState({ start: clickTime, end: null, isSelecting: true });
       } else {
-        setSelectionEnd(clickTime);
-        setIsSelecting(false);
+        // Complete selection - we have start but no end
+        const startTime = currentState.start;
+        const endTime = clickTime;
         
+        // Ensure start < end
+        const [finalStart, finalEnd] = startTime < endTime 
+          ? [startTime, endTime] 
+          : [endTime, startTime];
+        
+        selectionStateRef.current = { start: finalStart, end: finalEnd, isSelecting: false };
+        setDisplayState({ start: finalStart, end: finalEnd, isSelecting: false });
+        
+        // Call parent callback
         if (onRangeSelect) {
-          const startDate = new Date(selectionStart * 1000);
-          const endDate = new Date(clickTime * 1000);
-          
-          const [finalStart, finalEnd] = startDate < endDate 
-            ? [startDate, endDate] 
-            : [endDate, startDate];
-          
           onRangeSelect({
-            start: finalStart,
-            end: finalEnd
+            start: new Date(finalStart * 1000),
+            end: new Date(finalEnd * 1000)
           });
         }
       }
@@ -121,7 +124,7 @@ const CandlestickChart = ({
       window.removeEventListener('resize', handleResize);
       chart.remove();
     };
-  }, [height]);
+  }, [height, onRangeSelect]);
 
   useEffect(() => {
     if (candleSeriesRef.current && data && data.length > 0) {
@@ -131,9 +134,8 @@ const CandlestickChart = ({
   }, [data]);
 
   const resetSelection = useCallback(() => {
-    setSelectionStart(null);
-    setSelectionEnd(null);
-    setIsSelecting(false);
+    selectionStateRef.current = { start: null, end: null, isSelecting: false };
+    setDisplayState({ start: null, end: null, isSelecting: false });
   }, []);
 
   const formatDate = (timestamp) => {
@@ -148,35 +150,46 @@ const CandlestickChart = ({
 
   return (
     <div className="relative">
-      <div className="flex items-center justify-between mb-3 px-1">
+      <div className="flex items-center justify-between mb-3 px-1 min-h-[32px]">
         <div className="flex items-center gap-4">
-          {isSelecting && (
-            <div className="flex items-center gap-2 text-sm">
+          {displayState.isSelecting && displayState.start && (
+            <div className="flex items-center gap-2 text-sm animate-pulse">
               <span className="text-[#7A6A5C]">Başlangıç:</span>
-              <span className="font-medium text-[#C86F4A]">{formatDate(selectionStart)}</span>
-              <span className="text-[#7A6A5C]">→ Bitiş için tıklayın</span>
+              <span className="font-medium text-[#6D7C3B] px-2 py-1 bg-[#6D7C3B]/10 rounded">
+                {formatDate(displayState.start)}
+              </span>
+              <span className="text-[#C86F4A] font-medium">→ Bitiş için grafikte tıklayın</span>
             </div>
           )}
-          {selectionStart && selectionEnd && (
+          {!displayState.isSelecting && displayState.start && displayState.end && (
             <div className="flex items-center gap-2 text-sm">
+              <span className="text-[#7A6A5C]">Seçilen:</span>
               <span className="px-2 py-1 bg-[#6D7C3B]/10 rounded text-[#6D7C3B] font-medium">
-                {formatDate(selectionStart)}
+                {formatDate(displayState.start)}
               </span>
               <span className="text-[#7A6A5C]">→</span>
               <span className="px-2 py-1 bg-[#B04832]/10 rounded text-[#B04832] font-medium">
-                {formatDate(selectionEnd)}
+                {formatDate(displayState.end)}
+              </span>
+              <span className="text-xs text-[#7A6A5C] ml-2">
+                (tarihlere uygulandı)
               </span>
             </div>
           )}
+          {!displayState.start && !displayState.isSelecting && (
+            <span className="text-sm text-[#A89F91]">
+              Grafik üzerinde tıklayarak tarih aralığı seçin
+            </span>
+          )}
         </div>
-        {(selectionStart || selectionEnd) && (
+        {(displayState.start || displayState.end) && (
           <Button
             variant="ghost"
             size="sm"
             onClick={resetSelection}
-            className="text-[#7A6A5C] hover:text-[#2E2620]"
+            className="text-[#7A6A5C] hover:text-[#2E2620] text-xs"
           >
-            Sıfırla
+            Seçimi Sıfırla
           </Button>
         )}
       </div>
@@ -184,17 +197,13 @@ const CandlestickChart = ({
       <div 
         ref={chartContainerRef} 
         className="relative rounded-lg overflow-hidden border border-[#E6DCCF]"
-        style={{ height: `${height}px` }}
+        style={{ height: `${height}px`, cursor: 'crosshair' }}
       >
         {loading && (
           <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-10">
             <Loader2 className="w-8 h-8 animate-spin text-[#C86F4A]" />
           </div>
         )}
-      </div>
-
-      <div className="mt-2 text-xs text-[#A89F91] text-center">
-        Grafik üzerinde başlangıç ve bitiş tarihlerini seçmek için tıklayın
       </div>
     </div>
   );
