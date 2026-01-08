@@ -1,14 +1,23 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+import jwt
+from passlib.context import CryptContext
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from scipy.spatial.distance import euclidean
+from scipy.stats import pearsonr
+from sklearn.preprocessing import MinMaxScaler
 
 
 ROOT_DIR = Path(__file__).parent
@@ -19,54 +28,568 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
+# Create the main app
 app = FastAPI()
 
-# Create a router with the /api prefix
+# Create router with /api prefix
 api_router = APIRouter(prefix="/api")
 
+# Security
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
+SECRET_KEY = os.environ.get("JWT_SECRET", "bist-analiz-secret-key-2024")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# BIST 100 Symbols
+BIST_100_SYMBOLS = [
+    "AEFES", "AFYON", "AGESA", "AGHOL", "AKBNK", "AKCNS", "AKFGY", "AKFYE", "AKSA", "AKSEN",
+    "ALARK", "ALBRK", "ALFAS", "ALGYO", "ALKIM", "ANSGR", "ARCLK", "ARDYZ", "ASELS", "ASUZU",
+    "AYDEM", "AYGAZ", "BERA", "BIENY", "BIMAS", "BRSAN", "BRYAT", "BTCIM", "BUCIM", "CANTE",
+    "CCOLA", "CEMTS", "CIMSA", "CLEBI", "CONSE", "DEVA", "DOAS", "DOHOL", "ECILC", "EGEEN",
+    "EKGYO", "ENJSA", "ENKAI", "ERBOS", "EREGL", "EUPWR", "EUREN", "FROTO", "GARAN", "GENIL",
+    "GESAN", "GLYHO", "GOZDE", "GUBRF", "GWIND", "HALKB", "HEKTS", "IPEKE", "ISCTR", "ISGYO",
+    "ISMEN", "KARSN", "KCAER", "KCHOL", "KLSER", "KONTR", "KONYA", "KOZAA", "KOZAL", "KRDMD",
+    "KRVGD", "KTLEV", "LMKDC", "LOGO", "MAVI", "MERCN", "MGROS", "MIATK", "MKGYO", "ODAS",
+    "OTKAR", "OYAKC", "PAPIL", "PETKM", "PGSUS", "QUAGR", "SAHOL", "SASA", "SELEC", "SISE",
+    "SKBNK", "SMRTG", "SOKM", "TAVHL", "TCELL", "THYAO", "TKFEN", "TKNSA", "TOASO", "TRGYO",
+    "TSKB", "TTKOM", "TTRAK", "TUPRS", "TURSG", "ULKER", "VAKBN", "VERUS", "VESTL", "YKBNK"
+]
+
+# Models
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    created_at: str
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
+
+class StockAnalysisRequest(BaseModel):
+    symbol: str
+    start_date: str
+    end_date: str
+
+class SimilaritySearchRequest(BaseModel):
+    symbol: str
+    start_date: str
+    end_date: str
+    min_similarity: float = 0.7
+    limit: int = 10
+
+class CustomPatternRequest(BaseModel):
+    pattern_criteria: Dict[str, Any]
+    start_date: str
+    end_date: str
+    limit: int = 10
+
+class PeakTroughPoint(BaseModel):
+    point_type: str  # "dip" or "tepe"
+    point_number: int
+    date: str
+    price: float
+    percentage_change: Optional[float] = None
+
+class StockAnalysisResponse(BaseModel):
+    symbol: str
+    start_date: str
+    end_date: str
+    prices: List[Dict[str, Any]]
+    peaks_troughs: List[PeakTroughPoint]
+    summary: Dict[str, Any]
+
+class SimilarStockResult(BaseModel):
+    symbol: str
+    similarity_score: float
+    correlation: float
+    start_date: str
+    end_date: str
+    peaks_troughs: List[PeakTroughPoint]
+    current_price: float
+    price_change_percent: float
+
+# Helper Functions
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.PyJWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+def get_stock_data(symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
+    """Fetch stock data from Yahoo Finance"""
+    ticker = f"{symbol}.IS"  # BIST stocks use .IS suffix
+    try:
+        stock = yf.Ticker(ticker)
+        df = stock.history(start=start_date, end=end_date)
+        if df.empty:
+            logger.warning(f"No data for {ticker}")
+            return pd.DataFrame()
+        df = df.reset_index()
+        df['Date'] = pd.to_datetime(df['Date']).dt.strftime('%Y-%m-%d')
+        return df
+    except Exception as e:
+        logger.error(f"Error fetching {ticker}: {e}")
+        return pd.DataFrame()
+
+def normalize_prices(prices: np.ndarray) -> np.ndarray:
+    """Normalize prices to 0-1 range"""
+    if len(prices) == 0:
+        return prices
+    scaler = MinMaxScaler()
+    return scaler.fit_transform(prices.reshape(-1, 1)).flatten()
+
+def calculate_similarity(prices1: np.ndarray, prices2: np.ndarray) -> tuple:
+    """Calculate similarity between two price series"""
+    if len(prices1) == 0 or len(prices2) == 0:
+        return 0.0, 0.0
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+    # Normalize both series
+    norm1 = normalize_prices(prices1)
+    norm2 = normalize_prices(prices2)
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
+    # Resample to same length if needed
+    if len(norm1) != len(norm2):
+        min_len = min(len(norm1), len(norm2))
+        indices1 = np.linspace(0, len(norm1)-1, min_len).astype(int)
+        indices2 = np.linspace(0, len(norm2)-1, min_len).astype(int)
+        norm1 = norm1[indices1]
+        norm2 = norm2[indices2]
     
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    # Calculate Euclidean distance (lower is more similar)
+    distance = euclidean(norm1, norm2)
+    # Convert to similarity (0-1 scale)
+    max_distance = np.sqrt(len(norm1))  # Max possible distance for normalized data
+    similarity = max(0, 1 - (distance / max_distance))
+    
+    # Calculate correlation
+    try:
+        correlation, _ = pearsonr(norm1, norm2)
+        if np.isnan(correlation):
+            correlation = 0.0
+    except:
+        correlation = 0.0
+    
+    return similarity, correlation
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+def find_peaks_troughs(prices: np.ndarray, dates: List[str]) -> List[PeakTroughPoint]:
+    """
+    Find peaks and troughs based on the specified criteria:
+    - 1st dip: Starting point before 100% rise
+    - 1st peak: 100-160% rise from 1st dip, followed by 40-60% drop
+    - 2nd dip: After 40-60% drop from 1st peak
+    - 2nd peak: Exceeds 1st peak, then drops 20-30%
+    - And so on...
+    """
+    if len(prices) < 10:
+        return []
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
+    points = []
+    window = 5
     
-    return status_checks
+    # Find local minima and maxima
+    local_mins = []
+    local_maxs = []
+    
+    for i in range(window, len(prices) - window):
+        is_min = all(prices[i] <= prices[i-j] for j in range(1, window+1)) and \
+                 all(prices[i] <= prices[i+j] for j in range(1, window+1))
+        is_max = all(prices[i] >= prices[i-j] for j in range(1, window+1)) and \
+                 all(prices[i] >= prices[i+j] for j in range(1, window+1))
+        
+        if is_min:
+            local_mins.append((i, prices[i], dates[i]))
+        if is_max:
+            local_maxs.append((i, prices[i], dates[i]))
+    
+    # Identify significant peaks and troughs
+    dip_count = 0
+    peak_count = 0
+    last_dip = None
+    last_peak = None
+    
+    all_points = sorted(local_mins + local_maxs, key=lambda x: x[0])
+    
+    for idx, price, date in all_points:
+        is_dip = (idx, price, date) in local_mins
+        
+        if is_dip:
+            if last_peak is not None:
+                drop_pct = ((last_peak[1] - price) / last_peak[1]) * 100
+                
+                # Check criteria for each dip
+                if dip_count == 0 and drop_pct >= 40:
+                    dip_count += 1
+                    points.append(PeakTroughPoint(
+                        point_type="dip",
+                        point_number=dip_count,
+                        date=date,
+                        price=round(price, 2),
+                        percentage_change=round(-drop_pct, 2)
+                    ))
+                    last_dip = (idx, price, date)
+                elif dip_count >= 1 and last_peak is not None:
+                    if (dip_count == 1 and 40 <= drop_pct <= 60) or \
+                       (dip_count == 2 and 20 <= drop_pct <= 30) or \
+                       (dip_count >= 3 and 15 <= drop_pct <= 40):
+                        dip_count += 1
+                        points.append(PeakTroughPoint(
+                            point_type="dip",
+                            point_number=dip_count,
+                            date=date,
+                            price=round(price, 2),
+                            percentage_change=round(-drop_pct, 2)
+                        ))
+                        last_dip = (idx, price, date)
+            elif last_dip is None:
+                # First point - potential starting dip
+                dip_count += 1
+                points.append(PeakTroughPoint(
+                    point_type="dip",
+                    point_number=dip_count,
+                    date=date,
+                    price=round(price, 2),
+                    percentage_change=None
+                ))
+                last_dip = (idx, price, date)
+        else:
+            # It's a peak
+            if last_dip is not None:
+                rise_pct = ((price - last_dip[1]) / last_dip[1]) * 100
+                
+                # Check criteria for each peak
+                if peak_count == 0 and 100 <= rise_pct <= 160:
+                    peak_count += 1
+                    points.append(PeakTroughPoint(
+                        point_type="tepe",
+                        point_number=peak_count,
+                        date=date,
+                        price=round(price, 2),
+                        percentage_change=round(rise_pct, 2)
+                    ))
+                    last_peak = (idx, price, date)
+                elif peak_count >= 1:
+                    if last_peak is not None and price > last_peak[1]:
+                        peak_count += 1
+                        points.append(PeakTroughPoint(
+                            point_type="tepe",
+                            point_number=peak_count,
+                            date=date,
+                            price=round(price, 2),
+                            percentage_change=round(rise_pct, 2)
+                        ))
+                        last_peak = (idx, price, date)
+    
+    return points[:12]  # Limit to 12 points max
 
-# Include the router in the main app
+# Auth Routes
+@api_router.post("/auth/register", response_model=TokenResponse)
+async def register(user_data: UserCreate):
+    # Check if user exists
+    existing = await db.users.find_one({"email": user_data.email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create user
+    user_id = str(uuid.uuid4())
+    user_doc = {
+        "id": user_id,
+        "email": user_data.email,
+        "full_name": user_data.full_name,
+        "password_hash": get_password_hash(user_data.password),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_doc)
+    
+    # Create token
+    access_token = create_access_token({"sub": user_id})
+    
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse(
+            id=user_id,
+            email=user_data.email,
+            full_name=user_data.full_name,
+            created_at=user_doc["created_at"]
+        )
+    )
+
+@api_router.post("/auth/login", response_model=TokenResponse)
+async def login(credentials: UserLogin):
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    access_token = create_access_token({"sub": user["id"]})
+    
+    return TokenResponse(
+        access_token=access_token,
+        token_type="bearer",
+        user=UserResponse(
+            id=user["id"],
+            email=user["email"],
+            full_name=user["full_name"],
+            created_at=user["created_at"]
+        )
+    )
+
+@api_router.get("/auth/me", response_model=UserResponse)
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return UserResponse(
+        id=current_user["id"],
+        email=current_user["email"],
+        full_name=current_user["full_name"],
+        created_at=current_user["created_at"]
+    )
+
+# Stock Routes
+@api_router.get("/stocks/symbols")
+async def get_symbols(current_user: dict = Depends(get_current_user)):
+    """Get list of BIST 100 symbols"""
+    return {"symbols": BIST_100_SYMBOLS}
+
+@api_router.post("/stocks/analyze", response_model=StockAnalysisResponse)
+async def analyze_stock(request: StockAnalysisRequest, current_user: dict = Depends(get_current_user)):
+    """Analyze a single stock"""
+    df = get_stock_data(request.symbol, request.start_date, request.end_date)
+    
+    if df.empty:
+        raise HTTPException(status_code=404, detail=f"No data found for {request.symbol}")
+    
+    prices = df['Close'].values
+    dates = df['Date'].tolist()
+    
+    peaks_troughs = find_peaks_troughs(prices, dates)
+    
+    # Create price history
+    price_history = []
+    for i, row in df.iterrows():
+        price_history.append({
+            "date": row['Date'],
+            "open": round(row['Open'], 2),
+            "high": round(row['High'], 2),
+            "low": round(row['Low'], 2),
+            "close": round(row['Close'], 2),
+            "volume": int(row['Volume']) if pd.notna(row['Volume']) else 0
+        })
+    
+    # Calculate summary
+    summary = {
+        "min_price": round(prices.min(), 2),
+        "max_price": round(prices.max(), 2),
+        "avg_price": round(prices.mean(), 2),
+        "volatility": round(prices.std() / prices.mean() * 100, 2),
+        "total_return": round((prices[-1] - prices[0]) / prices[0] * 100, 2),
+        "data_points": len(prices)
+    }
+    
+    return StockAnalysisResponse(
+        symbol=request.symbol,
+        start_date=request.start_date,
+        end_date=request.end_date,
+        prices=price_history,
+        peaks_troughs=peaks_troughs,
+        summary=summary
+    )
+
+@api_router.post("/stocks/find-similar", response_model=List[SimilarStockResult])
+async def find_similar_stocks(request: SimilaritySearchRequest, current_user: dict = Depends(get_current_user)):
+    """Find stocks with similar price patterns"""
+    # Get reference stock data
+    ref_df = get_stock_data(request.symbol, request.start_date, request.end_date)
+    
+    if ref_df.empty:
+        raise HTTPException(status_code=404, detail=f"No data found for {request.symbol}")
+    
+    ref_prices = ref_df['Close'].values
+    results = []
+    
+    # Compare with all other BIST 100 stocks
+    for symbol in BIST_100_SYMBOLS:
+        if symbol == request.symbol:
+            continue
+        
+        try:
+            df = get_stock_data(symbol, request.start_date, request.end_date)
+            if df.empty or len(df) < 10:
+                continue
+            
+            prices = df['Close'].values
+            dates = df['Date'].tolist()
+            
+            similarity, correlation = calculate_similarity(ref_prices, prices)
+            
+            if similarity >= request.min_similarity:
+                peaks_troughs = find_peaks_troughs(prices, dates)
+                
+                results.append(SimilarStockResult(
+                    symbol=symbol,
+                    similarity_score=round(similarity * 100, 2),
+                    correlation=round(correlation * 100, 2),
+                    start_date=request.start_date,
+                    end_date=request.end_date,
+                    peaks_troughs=peaks_troughs,
+                    current_price=round(prices[-1], 2),
+                    price_change_percent=round((prices[-1] - prices[0]) / prices[0] * 100, 2)
+                ))
+        except Exception as e:
+            logger.warning(f"Error processing {symbol}: {e}")
+            continue
+    
+    # Sort by similarity score
+    results.sort(key=lambda x: x.similarity_score, reverse=True)
+    
+    return results[:request.limit]
+
+@api_router.post("/stocks/custom-pattern")
+async def find_custom_pattern(request: CustomPatternRequest, current_user: dict = Depends(get_current_user)):
+    """Find stocks matching custom pattern criteria"""
+    criteria = request.pattern_criteria
+    results = []
+    
+    # Extract criteria
+    min_rise_1 = criteria.get("min_rise_1", 100)  # First rise %
+    max_rise_1 = criteria.get("max_rise_1", 160)
+    min_drop_1 = criteria.get("min_drop_1", 40)   # First drop %
+    max_drop_1 = criteria.get("max_drop_1", 60)
+    min_rise_2 = criteria.get("min_rise_2", 20)   # Second rise %
+    
+    for symbol in BIST_100_SYMBOLS:
+        try:
+            df = get_stock_data(symbol, request.start_date, request.end_date)
+            if df.empty or len(df) < 20:
+                continue
+            
+            prices = df['Close'].values
+            dates = df['Date'].tolist()
+            
+            # Find patterns matching criteria
+            peaks_troughs = find_peaks_troughs(prices, dates)
+            
+            # Check if pattern matches criteria
+            matching_points = []
+            for pt in peaks_troughs:
+                if pt.percentage_change is not None:
+                    change = abs(pt.percentage_change)
+                    if pt.point_type == "tepe" and pt.point_number == 1:
+                        if min_rise_1 <= change <= max_rise_1:
+                            matching_points.append(pt)
+                    elif pt.point_type == "dip" and pt.point_number == 2:
+                        if min_drop_1 <= change <= max_drop_1:
+                            matching_points.append(pt)
+            
+            if len(matching_points) >= 2:
+                results.append({
+                    "symbol": symbol,
+                    "peaks_troughs": [p.model_dump() for p in peaks_troughs],
+                    "current_price": round(prices[-1], 2),
+                    "price_change_percent": round((prices[-1] - prices[0]) / prices[0] * 100, 2),
+                    "matching_criteria_count": len(matching_points)
+                })
+        except Exception as e:
+            logger.warning(f"Error processing {symbol}: {e}")
+            continue
+    
+    # Sort by matching criteria count
+    results.sort(key=lambda x: x["matching_criteria_count"], reverse=True)
+    
+    return results[:request.limit]
+
+@api_router.get("/stocks/{symbol}/quick")
+async def get_stock_quick(symbol: str, current_user: dict = Depends(get_current_user)):
+    """Get quick stock info"""
+    ticker = f"{symbol}.IS"
+    try:
+        stock = yf.Ticker(ticker)
+        info = stock.info
+        hist = stock.history(period="5d")
+        
+        if hist.empty:
+            raise HTTPException(status_code=404, detail=f"No data for {symbol}")
+        
+        current_price = hist['Close'].iloc[-1]
+        prev_price = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
+        change_pct = ((current_price - prev_price) / prev_price) * 100
+        
+        return {
+            "symbol": symbol,
+            "name": info.get("shortName", symbol),
+            "current_price": round(current_price, 2),
+            "change_percent": round(change_pct, 2),
+            "volume": int(hist['Volume'].iloc[-1]) if pd.notna(hist['Volume'].iloc[-1]) else 0,
+            "market_cap": info.get("marketCap"),
+            "sector": info.get("sector", "N/A")
+        }
+    except Exception as e:
+        logger.error(f"Error getting quick data for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Save analysis
+@api_router.post("/analysis/save")
+async def save_analysis(analysis_data: dict, current_user: dict = Depends(get_current_user)):
+    """Save user analysis"""
+    doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "data": analysis_data,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.saved_analyses.insert_one(doc)
+    return {"id": doc["id"], "message": "Analysis saved"}
+
+@api_router.get("/analysis/saved")
+async def get_saved_analyses(current_user: dict = Depends(get_current_user)):
+    """Get user's saved analyses"""
+    analyses = await db.saved_analyses.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    return analyses
+
+# Health check
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+# Include router
 app.include_router(api_router)
 
 app.add_middleware(
@@ -76,13 +599,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
