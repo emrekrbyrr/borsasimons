@@ -96,7 +96,7 @@ const AnalysisCandlestickChart = ({
     if (candleSeriesRef.current && data && data.length > 0) {
       candleSeriesRef.current.setData(data);
       
-      // Add markers for peaks and troughs
+      // Add markers for peaks and troughs using v5 API
       if (peaksTroughs && peaksTroughs.length > 0) {
         const markers = peaksTroughs.map(pt => {
           // Find the timestamp for this date
@@ -117,7 +117,14 @@ const AnalysisCandlestickChart = ({
           };
         }).filter(Boolean);
         
-        candleSeriesRef.current.setMarkers(markers);
+        // Use createSeriesMarkers API for v5
+        if (markersApiRef.current) {
+          markersApiRef.current.setMarkers(markers);
+        } else if (markers.length > 0) {
+          markersApiRef.current = createSeriesMarkers(candleSeriesRef.current, markers);
+        }
+      } else if (markersApiRef.current) {
+        markersApiRef.current.setMarkers([]);
       }
       
       chartRef.current?.timeScale().fitContent();
