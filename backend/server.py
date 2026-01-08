@@ -159,6 +159,16 @@ class SimilarStockResult(BaseModel):
     peaks_troughs: List[PeakTroughPoint]
     current_price: float
     price_change_percent: float
+    match_type: str = "full"  # "full" or "partial"
+    pattern_progress: Optional[float] = None  # % of pattern completed
+
+class PartialMatchRequest(BaseModel):
+    symbol: str
+    start_date: str
+    end_date: str
+    min_similarity: float = 0.6
+    pattern_start_percent: float = 30  # İlk yüzde kaçını karşılaştır
+    limit: int = 15
 
 # Helper Functions
 def create_access_token(data: dict):
