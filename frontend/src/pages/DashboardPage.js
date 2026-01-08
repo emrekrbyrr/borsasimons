@@ -377,55 +377,6 @@ const DashboardPage = () => {
               </div>
             </CardContent>
           </Card>
-                </div>
-
-                {/* Analyze Button */}
-                <div className="flex items-end">
-                  <Button
-                    onClick={handleAnalyze}
-                    disabled={!selectedSymbol || loading}
-                    className="w-full bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full py-6"
-                    data-testid="analyze-btn"
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <Search className="w-4 h-4 mr-2" />
-                    )}
-                    Analiz Et
-                  </Button>
-                </div>
-              </div>
-
-              {/* Quick Stats Preview */}
-              {quickStats && (
-                <div className="mt-6 p-4 bg-[#F6F1EA] rounded-xl border border-[#E6DCCF]">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                      <h3 className="font-medium text-[#2E2620]">{quickStats.symbol}</h3>
-                      <p className="text-sm text-[#7A6A5C]">{quickStats.name}</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div>
-                        <p className="text-sm text-[#7A6A5C]">Güncel Fiyat</p>
-                        <p className="text-xl font-bold text-[#2E2620]">
-                          ₺{quickStats.current_price?.toLocaleString('tr-TR')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-[#7A6A5C]">Değişim</p>
-                        <p className={`text-xl font-bold ${
-                          quickStats.change_percent >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'
-                        }`}>
-                          {quickStats.change_percent >= 0 ? '+' : ''}{quickStats.change_percent?.toFixed(2)}%
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Feature Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
