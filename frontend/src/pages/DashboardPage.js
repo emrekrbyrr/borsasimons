@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,7 +9,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Calendar } from '../components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
 import { toast } from 'sonner';
 import { format, subYears } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -21,8 +21,11 @@ import {
   BarChart3,
   Activity,
   ArrowRight,
-  Loader2
+  Loader2,
+  Check,
+  ChevronsUpDown
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 const API_URL = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -35,16 +38,26 @@ const DashboardPage = () => {
   const [endDate, setEndDate] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [quickStats, setQuickStats] = useState(null);
+  const [symbolSearchOpen, setSymbolSearchOpen] = useState(false);
+  const [symbolSearch, setSymbolSearch] = useState('');
 
   useEffect(() => {
     fetchSymbols();
   }, []);
+
+  // Filtrelenmiş semboller (yazılan metne göre)
+  const filteredSymbols = useMemo(() => {
+    if (!symbolSearch) return symbols;
+    const search = symbolSearch.toUpperCase();
+    return symbols.filter(s => s.startsWith(search) || s.includes(search));
+  }, [symbols, symbolSearch]);
 
   const fetchSymbols = async () => {
     try {
       const response = await axios.get(`${API_URL}/stocks/symbols`, {
         headers: getAuthHeader()
       });
+      // Backend'den zaten alfabetik sıralı geliyor
       setSymbols(response.data.symbols);
     } catch (error) {
       toast.error('Semboller yüklenemedi');
