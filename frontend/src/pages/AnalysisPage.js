@@ -323,11 +323,58 @@ const AnalysisPage = () => {
                       Benzer Hisse Ara
                     </CardTitle>
                     <CardDescription className="text-[#7A6A5C]">
-                      Bu kalıba benzer hisseleri bulun
+                      Bu kalıba benzer veya devam eden kalıpları bulun
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-6">
+                      {/* Search Mode Tabs */}
+                      <Tabs value={searchMode} onValueChange={setSearchMode} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2 bg-[#E8D9C7]">
+                          <TabsTrigger value="full" data-testid="full-match-tab">
+                            Tam Kalıp
+                          </TabsTrigger>
+                          <TabsTrigger value="partial" data-testid="partial-match-tab">
+                            Devam Eden Kalıp
+                          </TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="full" className="mt-4 space-y-4">
+                          <div className="p-3 bg-[#F6F1EA] rounded-lg">
+                            <p className="text-sm text-[#7A6A5C]">
+                              Seçilen tarih aralığındaki kalıbın tamamına benzer hisseleri bulur.
+                            </p>
+                          </div>
+                        </TabsContent>
+                        
+                        <TabsContent value="partial" className="mt-4 space-y-4">
+                          <div className="p-3 bg-[#C86F4A]/10 rounded-lg border border-[#C86F4A]/20">
+                            <p className="text-sm text-[#7A6A5C]">
+                              <strong className="text-[#C86F4A]">Yeni!</strong> Kalıbın başlangıcına benzeyen ama henüz tamamlanmamış hisseleri bulur. 
+                              Bu hisseler kalıbın devamını yapabilir.
+                            </p>
+                          </div>
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm text-[#7A6A5C]">Kalıp Başlangıç Oranı</span>
+                              <span className="text-sm font-medium text-[#2E2620]">{patternPercent}%</span>
+                            </div>
+                            <Slider
+                              value={patternPercent}
+                              onValueChange={setPatternPercent}
+                              max={60}
+                              min={20}
+                              step={5}
+                              className="[&_[role=slider]]:bg-[#C86F4A]"
+                              data-testid="pattern-percent-slider"
+                            />
+                            <p className="text-xs text-[#A89F91] mt-1">
+                              Referans kalıbın ilk %{patternPercent}'ını karşılaştırır
+                            </p>
+                          </div>
+                        </TabsContent>
+                      </Tabs>
+
                       <div>
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm text-[#7A6A5C]">Minimum Benzerlik</span>
@@ -357,7 +404,7 @@ const AnalysisPage = () => {
                         ) : (
                           <>
                             <RefreshCw className="w-4 h-4 mr-2" />
-                            Benzer Hisseleri Bul
+                            {searchMode === 'partial' ? 'Devam Eden Kalıpları Bul' : 'Benzer Hisseleri Bul'}
                           </>
                         )}
                       </Button>
@@ -367,7 +414,7 @@ const AnalysisPage = () => {
                     {similarStocks.length > 0 && (
                       <div className="mt-6">
                         <h4 className="text-sm font-medium text-[#2E2620] mb-3">
-                          Bulunan Benzer Hisseler ({similarStocks.length})
+                          {searchMode === 'partial' ? 'Devam Eden Kalıplar' : 'Benzer Hisseler'} ({similarStocks.length})
                         </h4>
                         <ScrollArea className="h-[300px]">
                           <div className="space-y-2">
@@ -391,9 +438,17 @@ const AnalysisPage = () => {
                                       <span className={getSimilarityBadgeClass(stock.similarity_score)}>
                                         {stock.similarity_score}%
                                       </span>
+                                      {stock.match_type === 'partial' && (
+                                        <Badge variant="outline" className="text-xs bg-[#C86F4A]/10 text-[#C86F4A] border-[#C86F4A]/30">
+                                          Devam Ediyor
+                                        </Badge>
+                                      )}
                                     </div>
                                     <p className="text-sm text-[#7A6A5C] mt-1">
                                       Korelasyon: {stock.correlation}%
+                                      {stock.pattern_progress && (
+                                        <span className="ml-2">• İlerleme: %{stock.pattern_progress}</span>
+                                      )}
                                     </p>
                                   </div>
                                   <div className="text-right">
