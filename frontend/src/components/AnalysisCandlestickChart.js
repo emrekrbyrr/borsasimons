@@ -6,7 +6,11 @@ const AnalysisCandlestickChart = ({
   data, 
   loading, 
   peaksTroughs = [],
-  height = 400 
+  height = 400,
+  // New props for scrollable comparison
+  visibleStartDate = null,  // Initial visible start date (YYYY-MM-DD)
+  visibleEndDate = null,    // Initial visible end date (YYYY-MM-DD)
+  showScrollHint = false    // Show hint that user can scroll
 }) => {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
