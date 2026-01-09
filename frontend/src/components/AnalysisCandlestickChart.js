@@ -132,9 +132,31 @@ const AnalysisCandlestickChart = ({
         markersApiRef.current.setMarkers([]);
       }
       
-      chartRef.current?.timeScale().fitContent();
+      // Set visible range if specified, otherwise fit all content
+      if (visibleStartDate && visibleEndDate && chartRef.current) {
+        // Find the timestamps for start and end dates
+        const startCandle = data.find(c => {
+          const candleDate = new Date(c.time * 1000).toISOString().split('T')[0];
+          return candleDate >= visibleStartDate;
+        });
+        const endCandle = [...data].reverse().find(c => {
+          const candleDate = new Date(c.time * 1000).toISOString().split('T')[0];
+          return candleDate <= visibleEndDate;
+        });
+        
+        if (startCandle && endCandle) {
+          chartRef.current.timeScale().setVisibleRange({
+            from: startCandle.time,
+            to: endCandle.time
+          });
+        } else {
+          chartRef.current.timeScale().fitContent();
+        }
+      } else {
+        chartRef.current?.timeScale().fitContent();
+      }
     }
-  }, [data, peaksTroughs]);
+  }, [data, peaksTroughs, visibleStartDate, visibleEndDate]);
 
   return (
     <div className="relative">
