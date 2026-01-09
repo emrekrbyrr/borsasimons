@@ -121,6 +121,9 @@ const DrawPatternPage = () => {
       },
       rightPriceScale: { borderColor: '#E6DCCF' },
       timeScale: { borderColor: '#E6DCCF', timeVisible: false },
+      localization: {
+        locale: 'tr-TR',
+      },
     });
 
     const candleSeries = chart.addSeries(CandlestickSeries, {
