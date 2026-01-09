@@ -49,6 +49,14 @@ const DrawPatternPage = () => {
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState([]);
   
+  // Comparison modal states
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareStock, setCompareStock] = useState(null);
+  const [compareCandleData, setCompareCandleData] = useState([]);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [refCandleData, setRefCandleData] = useState([]);
+  const [refLoading, setRefLoading] = useState(false);
+  
   // Chart refs
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
