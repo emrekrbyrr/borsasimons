@@ -152,7 +152,7 @@ const DashboardPage = () => {
           {/* Header */}
           <div className="mb-8 animate-fade-in">
             <h1 className="text-3xl md:text-4xl font-bold text-[#2E2620] font-['Playfair_Display']">
-              Dashboard
+              Ana Sayfa
             </h1>
             <p className="text-[#7A6A5C] mt-2">
               BIST 100 hisselerinde benzer kalıpları keşfedin
@@ -184,7 +184,7 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-[#7A6A5C]">Analiz Türü</p>
-                    <p className="text-2xl font-bold text-[#2E2620]">DTW</p>
+                    <p className="text-2xl font-bold text-[#2E2620]">Topoloji</p>
                     <p className="text-xs text-[#7A6A5C]">Benzerlik Algoritması</p>
                   </div>
                 </div>
@@ -199,7 +199,7 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-[#7A6A5C]">Tepe Noktası</p>
-                    <p className="text-2xl font-bold text-[#2E2620]">5</p>
+                    <p className="text-2xl font-bold text-[#2E2620]">—</p>
                     <p className="text-xs text-[#7A6A5C]">Maksimum Tespit</p>
                   </div>
                 </div>
@@ -214,7 +214,7 @@ const DashboardPage = () => {
                   </div>
                   <div>
                     <p className="text-sm text-[#7A6A5C]">Dip Noktası</p>
-                    <p className="text-2xl font-bold text-[#2E2620]">6</p>
+                    <p className="text-2xl font-bold text-[#2E2620]">—</p>
                     <p className="text-xs text-[#7A6A5C]">Maksimum Tespit</p>
                   </div>
                 </div>
