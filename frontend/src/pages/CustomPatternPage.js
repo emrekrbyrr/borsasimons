@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -11,6 +11,7 @@ import { ScrollArea } from '../components/ui/scroll-area';
 import { Slider } from '../components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
 import { toast } from 'sonner';
 import { format, subYears } from 'date-fns';
 import { tr } from 'date-fns/locale';
@@ -21,8 +22,11 @@ import {
   TrendingUp,
   TrendingDown,
   Info,
-  ChevronRight
+  ChevronRight,
+  Check,
+  ChevronsUpDown
 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
 const API_URL = `${BACKEND_URL}/api`;
@@ -31,6 +35,10 @@ const CustomPatternPage = () => {
   const { getAuthHeader } = useAuth();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
+  const [symbols, setSymbols] = useState([]);
+  const [selectedSymbol, setSelectedSymbol] = useState('');
+  const [symbolSearchOpen, setSymbolSearchOpen] = useState(false);
+  const [symbolSearch, setSymbolSearch] = useState('');
   const [startDate, setStartDate] = useState(subYears(new Date(), 2));
   const [endDate, setEndDate] = useState(new Date());
   const [minPointsMatch, setMinPointsMatch] = useState([4]);
@@ -72,6 +80,25 @@ const CustomPatternPage = () => {
   const updateCriteria = (key, value) => {
     setCriteria(prev => ({ ...prev, [key]: value }));
   };
+
+  const fetchSymbols = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/stocks/symbols`);
+      setSymbols(response.data.symbols || []);
+    } catch (error) {
+      toast.error('Semboller yüklenemedi');
+    }
+  };
+
+  useEffect(() => {
+    fetchSymbols();
+  }, []);
+
+  const filteredSymbols = useMemo(() => {
+    if (!symbolSearch) return symbols;
+    const search = symbolSearch.toUpperCase();
+    return symbols.filter(s => s.startsWith(search) || s.includes(search));
+  }, [symbols, symbolSearch]);
 
   const handleSearch = async () => {
     setLoading(true);
@@ -189,6 +216,61 @@ const CustomPatternPage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* Symbol Select */}
+                  <div className="space-y-2">
+                    <Label className="text-[#7A6A5C] text-xs">Hisse</Label>
+                    <Popover open={symbolSearchOpen} onOpenChange={setSymbolSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={symbolSearchOpen}
+                          className="w-full justify-between border-[#E6DCCF] hover:bg-[#E8D9C7]/50 text-sm"
+                          data-testid="custom-symbol-select"
+                        >
+                          {selectedSymbol || "Hisse ara..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                          <CommandInput
+                            placeholder="Hisse ara (örn: THY, GAR)..."
+                            value={symbolSearch}
+                            onValueChange={setSymbolSearch}
+                            data-testid="custom-symbol-search-input"
+                          />
+                          <CommandList>
+                            <CommandEmpty>Sonuç bulunamadı.</CommandEmpty>
+                            <CommandGroup>
+                              {filteredSymbols.slice(0, 300).map((symbol) => (
+                                <CommandItem
+                                  key={symbol}
+                                  value={symbol}
+                                  onSelect={(currentValue) => {
+                                    setSelectedSymbol(currentValue.toUpperCase());
+                                    setSymbolSearchOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      selectedSymbol === symbol ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {symbol}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    <p className="text-xs text-[#A89F91]">
+                      Not: Bu sayfa kriterlere uyan hisseleri listeler; hisse seçimi opsiyoneldir.
+                    </p>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label className="text-[#7A6A5C] text-xs">Başlangıç</Label>
