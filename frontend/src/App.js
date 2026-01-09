@@ -95,6 +95,14 @@ function App() {
             }
           />
           <Route
+            path="/draw-pattern"
+            element={
+              <ProtectedRoute>
+                <DrawPatternPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/saved"
             element={
               <ProtectedRoute>
