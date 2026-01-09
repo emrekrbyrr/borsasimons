@@ -48,8 +48,9 @@ const LoginPage = () => {
             </h1>
           </div>
           <p className="text-white/80 text-lg max-w-md">
-            BIST 100 hisselerinde benzer fiyat kalıplarını keşfedin. 
-            Akıllı algoritmalarla yatırım fırsatlarını yakalayın.
+            Biz insanların yaptığı hataları yapmıyoruz; biz sadece matematiği takip ediyoruz
+            <br />
+            <span className="italic text-white/70">JIM SIMONS.</span>
           </p>
         </div>
       </div>

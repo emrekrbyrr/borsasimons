@@ -1,0 +1,45 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: simons-backend
+    environment:
+      # Mongo
+      # Uses existing mongo container on the host (shared network)
+      MONGO_URL: mongodb://burcu-teacher-blog-mongo-1:27017
+      DB_NAME: simons
+
+      # Auth
+      JWT_SECRET: change-me-in-production
+
+      # CORS (comma-separated)
+      CORS_ORIGINS: https://simons.com.tr,https://www.simons.com.tr
+    networks:
+      - shared
+    ports:
+      - "127.0.0.1:8010:8000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1024M
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: simons-frontend
+    networks:
+      - shared
+    ports:
+      - "127.0.0.1:8090:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+networks:
+  shared:
+    external: true
