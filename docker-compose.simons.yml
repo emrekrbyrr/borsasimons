@@ -11,6 +11,7 @@ services:
 
       # Auth
       JWT_SECRET: change-me-in-production
+      ADMIN_EMAILS: emrekirbayir@gmail.com
 
       # CORS (comma-separated)
       CORS_ORIGINS: https://simons.com.tr,https://www.simons.com.tr

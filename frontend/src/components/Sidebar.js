@@ -6,6 +6,7 @@ import {
   Search,
   Settings,
   Bookmark,
+  UserCheck,
   LogOut,
   Menu,
   X
@@ -17,6 +18,7 @@ const Sidebar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isAdmin = user?.role === 'admin' || user?.email === 'emrekirbayir@gmail.com';
 
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -40,7 +42,7 @@ const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-6 px-3 space-y-1">
+      <nav className="flex-1 flex flex-col py-6 px-3 space-y-1">
         {navItems.map((item) => (
           <Link
             key={item.path}
@@ -53,6 +55,21 @@ const Sidebar = () => {
             <span>{item.label}</span>
           </Link>
         ))}
+
+        {/* Admin-only link pinned to bottom */}
+        {isAdmin && (
+          <div className="mt-auto pt-4">
+            <Link
+              to="/admin/pending-approvals"
+              onClick={() => setMobileOpen(false)}
+              className={`sidebar-link ${isActive('/admin/pending-approvals') ? 'active' : ''}`}
+              data-testid="nav-pending-approvals"
+            >
+              <UserCheck className="w-5 h-5" />
+              <span>Onay Bekleyenler</span>
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* User Section */}

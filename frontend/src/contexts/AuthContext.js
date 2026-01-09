@@ -47,11 +47,18 @@ export const AuthProvider = ({ children }) => {
       password,
       full_name: fullName
     });
-    const { access_token, user: userData } = response.data;
-    localStorage.setItem('token', access_token);
-    setToken(access_token);
-    setUser(userData);
-    return userData;
+    const data = response.data;
+    
+    // If backend returned a token, user is approved (or admin)
+    if (data?.access_token && data?.user) {
+      localStorage.setItem('token', data.access_token);
+      setToken(data.access_token);
+      setUser(data.user);
+      return data.user;
+    }
+    
+    // Otherwise: pending approval
+    return data;
   };
 
   const logout = () => {

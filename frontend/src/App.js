@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import CustomPatternPage from "./pages/CustomPatternPage";
 import SavedAnalysesPage from "./pages/SavedAnalysesPage";
+import PendingApprovalsPage from "./pages/PendingApprovalsPage";
 import "./App.css";
 
 // Protected Route Component
@@ -25,6 +26,30 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
   
+  return children;
+};
+
+// Admin Route Component
+const AdminRoute = ({ children }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F6F1EA] flex items-center justify-center">
+        <div className="animate-pulse text-[#7A6A5C]">Yükleniyor...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const isAdmin = user?.role === "admin" || user?.email === "emrekirbayir@gmail.com";
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 };
 
@@ -99,6 +124,14 @@ function App() {
               <ProtectedRoute>
                 <SavedAnalysesPage />
               </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/pending-approvals"
+            element={
+              <AdminRoute>
+                <PendingApprovalsPage />
+              </AdminRoute>
             }
           />
         </Routes>
