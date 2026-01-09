@@ -172,6 +172,13 @@ const AnalysisCandlestickChart = ({
         )}
       </div>
       
+      {/* Scroll Hint */}
+      {showScrollHint && (
+        <div className="flex items-center justify-center gap-2 mt-2 text-xs text-[#7A6A5C]">
+          <span>← Grafiği kaydırarak kalıptan sonrasını görebilirsiniz →</span>
+        </div>
+      )}
+      
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mt-3">
         <div className="flex items-center gap-2">
