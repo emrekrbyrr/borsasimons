@@ -119,6 +119,14 @@ function App() {
             }
           />
           <Route
+            path="/draw-pattern"
+            element={
+              <ProtectedRoute>
+                <CustomPatternPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/saved"
             element={
               <ProtectedRoute>

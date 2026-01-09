@@ -23,7 +23,7 @@ const Sidebar = () => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/analysis', label: 'Benzerlik Analizi', icon: Search },
-    { path: '/custom-pattern', label: 'Özel Kalıp', icon: Settings },
+    { path: '/draw-pattern', label: 'Özel Kalıp', icon: Settings },
     { path: '/saved', label: 'Kayıtlı Analizler', icon: Bookmark },
   ];
 

@@ -440,7 +440,7 @@ const DashboardPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
             <Card 
               className="card-organic card-interactive animate-slide-up stagger-3"
-              onClick={() => navigate('/custom-pattern')}
+              onClick={() => navigate('/draw-pattern')}
               data-testid="custom-pattern-card"
             >
               <CardContent className="p-6">
