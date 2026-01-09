@@ -207,10 +207,13 @@ const DrawPatternPage = () => {
   }, [selectedPoints]);
 
   const handlePointSelect = useCallback((time, price) => {
+    // Round price to 2 decimal places
+    const roundedPrice = Math.round(price * 100) / 100;
+    
     setSelectedPoints(prev => {
       const newPoint = {
         time,
-        price,
+        price: roundedPrice,
         type: nextPointType,
         index: prev.length + 1
       };
@@ -220,7 +223,7 @@ const DrawPatternPage = () => {
     // Alternate point type
     setNextPointType(prev => prev === 'dip' ? 'tepe' : 'dip');
     
-    toast.success(`${nextPointType === 'dip' ? 'Dip' : 'Tepe'} noktası eklendi`);
+    toast.success(`${nextPointType === 'dip' ? 'Dip' : 'Tepe'} noktası eklendi: ₺${roundedPrice.toLocaleString('tr-TR')}`);
   }, [nextPointType]);
 
   // Update refs when values change
