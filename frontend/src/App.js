@@ -6,6 +6,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import AnalysisPage from "./pages/AnalysisPage";
 import CustomPatternPage from "./pages/CustomPatternPage";
+import DrawPatternPage from "./pages/DrawPatternPage";
 import SavedAnalysesPage from "./pages/SavedAnalysesPage";
 import "./App.css";
 
