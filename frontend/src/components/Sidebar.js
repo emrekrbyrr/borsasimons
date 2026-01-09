@@ -8,7 +8,8 @@ import {
   Bookmark,
   LogOut,
   Menu,
-  X
+  X,
+  PenTool
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
@@ -21,6 +22,7 @@ const Sidebar = () => {
   const navItems = [
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/analysis', label: 'Benzerlik Analizi', icon: Search },
+    { path: '/draw-pattern', label: 'Kalıp Çizimi', icon: PenTool },
     { path: '/custom-pattern', label: 'Özel Kalıp', icon: Settings },
     { path: '/saved', label: 'Kayıtlı Analizler', icon: Bookmark },
   ];
