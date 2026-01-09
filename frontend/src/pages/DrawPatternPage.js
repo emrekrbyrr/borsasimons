@@ -146,7 +146,7 @@ const DrawPatternPage = () => {
 
     // Handle click on chart
     chart.subscribeClick((param) => {
-      if (!drawingMode || !param.time || !param.point) return;
+      if (!drawingModeRef.current || !param.time || !param.point) return;
       
       // Get the price at click point
       const price = candleSeries.coordinateToPrice(param.point.y);
@@ -154,13 +154,16 @@ const DrawPatternPage = () => {
       
       // Find nearest candle
       const clickTime = param.time;
-      const nearestCandle = candleData.find(c => c.time === clickTime);
+      const currentCandleData = candleDataRef.current;
+      const nearestCandle = currentCandleData.find(c => c.time === clickTime);
       if (!nearestCandle) return;
       
       // Use close price of the candle
       const selectedPrice = nearestCandle.close;
       
-      handlePointSelect(clickTime, selectedPrice);
+      if (handlePointSelectRef.current) {
+        handlePointSelectRef.current(clickTime, selectedPrice);
+      }
     });
 
     const handleResize = () => {
