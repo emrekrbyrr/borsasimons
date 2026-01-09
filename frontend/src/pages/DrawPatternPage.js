@@ -52,6 +52,11 @@ const DrawPatternPage = () => {
   const candleSeriesRef = useRef(null);
   const lineSeriesRef = useRef(null);
   const markersRef = useRef([]);
+  
+  // Refs for click handler (to avoid stale closures)
+  const drawingModeRef = useRef(drawingMode);
+  const candleDataRef = useRef(candleData);
+  const handlePointSelectRef = useRef(null);
 
   // Fetch symbols on mount
   useEffect(() => {
