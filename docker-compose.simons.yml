@@ -1,26 +1,12 @@
 services:
-  mongo:
-    image: mongo:7
-    container_name: simons-mongo
-    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
-    volumes:
-      - simons_mongo_data:/data/db
-    networks:
-      - simons
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          cpus: "0.50"
-          memory: 512M
-
   backend:
     build:
       context: ./backend
     container_name: simons-backend
     environment:
       # Mongo
-      MONGO_URL: mongodb://mongo:27017
+      # Uses existing mongo container on the host (shared network)
+      MONGO_URL: mongodb://burcu-teacher-blog-mongo-1:27017
       DB_NAME: simons
 
       # Auth
@@ -28,10 +14,8 @@ services:
 
       # CORS (comma-separated)
       CORS_ORIGINS: https://simons.com.tr,https://www.simons.com.tr
-    depends_on:
-      - mongo
     networks:
-      - simons
+      - shared
     ports:
       - "127.0.0.1:8010:8000"
     restart: unless-stopped
@@ -46,7 +30,7 @@ services:
       context: ./frontend
     container_name: simons-frontend
     networks:
-      - simons
+      - shared
     ports:
       - "127.0.0.1:8090:80"
     restart: unless-stopped
@@ -57,9 +41,5 @@ services:
           memory: 256M
 
 networks:
-  simons:
-    name: simons
-    driver: bridge
-
-volumes:
-  simons_mongo_data:
+  shared:
+    external: true
