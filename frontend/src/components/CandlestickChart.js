@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Button } from './ui/button';
 import { Loader2 } from 'lucide-react';
 
@@ -12,6 +12,7 @@ const CandlestickChart = ({
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
+  const markersApiRef = useRef(null);
   const onRangeSelectRef = useRef(onRangeSelect);
   const selectionStateRef = useRef({ start: null, end: null, isSelecting: false });
   const [displayState, setDisplayState] = useState({ start: null, end: null, isSelecting: false });
@@ -132,6 +133,7 @@ const CandlestickChart = ({
         chartRef.current.remove();
         chartRef.current = null;
         candleSeriesRef.current = null;
+        markersApiRef.current = null;
       }
     };
   }, [height]); // Only recreate on height change
@@ -143,6 +145,52 @@ const CandlestickChart = ({
       chartRef.current?.timeScale().fitContent();
     }
   }, [data]);
+
+  // Update selection markers when displayState changes
+  useEffect(() => {
+    if (!candleSeriesRef.current || !data || data.length === 0) return;
+
+    const markers = [];
+    
+    if (displayState.start) {
+      // Find the candle closest to start time
+      const startCandle = data.find(c => c.time >= displayState.start) || data[data.length - 1];
+      if (startCandle) {
+        markers.push({
+          time: startCandle.time,
+          position: 'belowBar',
+          color: '#6D7C3B',
+          shape: 'arrowUp',
+          text: 'Başlangıç',
+        });
+      }
+    }
+    
+    if (displayState.end && !displayState.isSelecting) {
+      // Find the candle closest to end time
+      const endCandle = data.find(c => c.time >= displayState.end) || data[data.length - 1];
+      if (endCandle) {
+        markers.push({
+          time: endCandle.time,
+          position: 'aboveBar',
+          color: '#B04832',
+          shape: 'arrowDown',
+          text: 'Bitiş',
+        });
+      }
+    }
+
+    // Use createSeriesMarkers API for v5
+    if (markers.length > 0) {
+      if (markersApiRef.current) {
+        markersApiRef.current.setMarkers(markers);
+      } else {
+        markersApiRef.current = createSeriesMarkers(candleSeriesRef.current, markers);
+      }
+    } else if (markersApiRef.current) {
+      markersApiRef.current.setMarkers([]);
+    }
+  }, [displayState, data]);
 
   const resetSelection = useCallback(() => {
     selectionStateRef.current = { start: null, end: null, isSelecting: false };

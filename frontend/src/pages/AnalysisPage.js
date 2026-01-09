@@ -11,6 +11,7 @@ import { Badge } from '../components/ui/badge';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { Slider } from '../components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -19,7 +20,9 @@ import {
   TrendingDown,
   Save,
   RefreshCw,
-  Info
+  Info,
+  GitCompare,
+  X
 } from 'lucide-react';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || '';
@@ -41,6 +44,12 @@ const AnalysisPage = () => {
   const [candleData, setCandleData] = useState([]);
   const [chartLoading, setChartLoading] = useState(false);
   const [timeInterval, setTimeInterval] = useState('1d');
+  
+  // Comparison modal states
+  const [compareModalOpen, setCompareModalOpen] = useState(false);
+  const [compareStock, setCompareStock] = useState(null);
+  const [compareCandleData, setCompareCandleData] = useState([]);
+  const [compareLoading, setCompareLoading] = useState(false);
   
   const { symbol, startDate, endDate } = location.state || {};
 
@@ -70,6 +79,31 @@ const AnalysisPage = () => {
   const handleIntervalChange = (interval) => {
     setTimeInterval(interval);
     fetchCandlestickData(interval);
+  };
+
+  // Open comparison modal and fetch comparison stock data
+  const openCompareModal = async (stock) => {
+    setCompareStock(stock);
+    setCompareModalOpen(true);
+    setCompareLoading(true);
+    
+    try {
+      // Fetch candlestick data for the similar stock - get MORE data so user can scroll
+      // Get data from pattern start to present (to see what happened after)
+      const compareStartDate = stock.start_date;
+      
+      // Use period=2y to get enough data for scrolling (pattern + future)
+      const response = await axios.get(
+        `${API_URL}/stocks/${stock.symbol}/candlestick?interval=${timeInterval}&period=5y`,
+        { headers: getAuthHeader() }
+      );
+      setCompareCandleData(response.data.candles);
+    } catch (error) {
+      console.error('Compare candlestick error:', error);
+      toast.error('Karşılaştırma verisi yüklenemedi');
+    } finally {
+      setCompareLoading(false);
+    }
   };
 
   const fetchAnalysis = async () => {
@@ -407,11 +441,29 @@ const AnalysisPage = () => {
                                       )}
                                     </div>
                                     <p className="text-sm text-[#7A6A5C] mt-1">
+                                      {stock.start_date} → {stock.end_date}
+                                    </p>
+                                    <p className="text-sm text-[#7A6A5C]">
                                       Korelasyon: {stock.correlation}%
                                       {stock.pattern_progress && (
                                         <span className="ml-2">• İlerleme: %{stock.pattern_progress}</span>
                                       )}
                                     </p>
+                                    {/* Kalıptan sonra ne oldu */}
+                                    {(stock.after_pattern_1m !== null || stock.after_pattern_3m !== null) && (
+                                      <div className="flex gap-3 mt-1">
+                                        {stock.after_pattern_1m !== null && (
+                                          <span className={`text-xs font-medium ${stock.after_pattern_1m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                                            1A: {stock.after_pattern_1m >= 0 ? '+' : ''}{stock.after_pattern_1m}%
+                                          </span>
+                                        )}
+                                        {stock.after_pattern_3m !== null && (
+                                          <span className={`text-xs font-medium ${stock.after_pattern_3m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                                            3A: {stock.after_pattern_3m >= 0 ? '+' : ''}{stock.after_pattern_3m}%
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                   <div className="text-right">
                                     <p className="font-medium text-[#2E2620]">
@@ -666,22 +718,33 @@ const AnalysisPage = () => {
                         </div>
                       )}
 
-                      <Button
-                        onClick={() => {
-                          navigate('/analysis', {
-                            state: {
-                              symbol: selectedSimilar.symbol,
-                              startDate,
-                              endDate
-                            }
-                          });
-                          window.location.reload();
-                        }}
-                        className="w-full bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full mt-4"
-                        data-testid="analyze-similar-btn"
-                      >
-                        Bu Hisseyi Analiz Et
-                      </Button>
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          onClick={() => openCompareModal(selectedSimilar)}
+                          variant="outline"
+                          className="flex-1 border-[#6D7C3B] text-[#6D7C3B] hover:bg-[#6D7C3B]/10 rounded-full"
+                          data-testid="compare-btn"
+                        >
+                          <GitCompare className="w-4 h-4 mr-2" />
+                          Karşılaştır
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            navigate('/analysis', {
+                              state: {
+                                symbol: selectedSimilar.symbol,
+                                startDate,
+                                endDate
+                              }
+                            });
+                            window.location.reload();
+                          }}
+                          className="flex-1 bg-[#C86F4A] hover:bg-[#B05D3A] text-white rounded-full"
+                          data-testid="analyze-similar-btn"
+                        >
+                          Analiz Et
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -690,6 +753,196 @@ const AnalysisPage = () => {
           )}
         </div>
       </main>
+
+      {/* Comparison Modal */}
+      <Dialog open={compareModalOpen} onOpenChange={setCompareModalOpen}>
+        <DialogContent className="max-w-[95vw] w-[1400px] max-h-[90vh] overflow-y-auto bg-[#F6F1EA]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-['Playfair_Display'] text-[#2E2620] flex items-center gap-3">
+              <GitCompare className="w-6 h-6 text-[#C86F4A]" />
+              Kalıp Karşılaştırması
+            </DialogTitle>
+            <DialogDescription className="text-[#7A6A5C]">
+              {symbol} ile {compareStock?.symbol} arasındaki benzer kalıpların karşılaştırması
+            </DialogDescription>
+          </DialogHeader>
+          
+          {compareStock && (
+            <div className="mt-4">
+              {/* Similarity Stats */}
+              <div className="flex items-center justify-center gap-8 mb-6 p-4 bg-white rounded-xl border border-[#E6DCCF]">
+                <div className="text-center">
+                  <p className="text-sm text-[#7A6A5C]">Benzerlik Skoru</p>
+                  <p className="text-3xl font-bold text-[#6D7C3B]">{compareStock.similarity_score}%</p>
+                </div>
+                <div className="w-px h-12 bg-[#E6DCCF]" />
+                <div className="text-center">
+                  <p className="text-sm text-[#7A6A5C]">Korelasyon</p>
+                  <p className="text-3xl font-bold text-[#C86F4A]">{compareStock.correlation}%</p>
+                </div>
+                {compareStock.pattern_progress && (
+                  <>
+                    <div className="w-px h-12 bg-[#E6DCCF]" />
+                    <div className="text-center">
+                      <p className="text-sm text-[#7A6A5C]">Kalıp İlerlemesi</p>
+                      <p className="text-3xl font-bold text-[#2E2620]">{compareStock.pattern_progress}%</p>
+                    </div>
+                  </>
+                )}
+                {/* Kalıptan Sonra Ne Oldu */}
+                {(compareStock.after_pattern_1m !== null || compareStock.after_pattern_3m !== null) && (
+                  <>
+                    <div className="w-px h-12 bg-[#E6DCCF]" />
+                    <div className="text-center">
+                      <p className="text-sm text-[#7A6A5C]">Kalıptan Sonra</p>
+                      <div className="flex gap-4 mt-1">
+                        {compareStock.after_pattern_1m !== null && (
+                          <div>
+                            <p className="text-xs text-[#7A6A5C]">1 Ay</p>
+                            <p className={`text-xl font-bold ${compareStock.after_pattern_1m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                              {compareStock.after_pattern_1m >= 0 ? '+' : ''}{compareStock.after_pattern_1m}%
+                            </p>
+                          </div>
+                        )}
+                        {compareStock.after_pattern_3m !== null && (
+                          <div>
+                            <p className="text-xs text-[#7A6A5C]">3 Ay</p>
+                            <p className={`text-xl font-bold ${compareStock.after_pattern_3m >= 0 ? 'text-[#6D7C3B]' : 'text-[#B04832]'}`}>
+                              {compareStock.after_pattern_3m >= 0 ? '+' : ''}{compareStock.after_pattern_3m}%
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Side by Side Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Reference Stock Chart */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-['Playfair_Display'] text-[#2E2620]">
+                          {symbol}
+                          <Badge className="ml-2 bg-[#6D7C3B]/10 text-[#6D7C3B] border-[#6D7C3B]/30">
+                            Referans
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-[#7A6A5C]">
+                          {startDate} - {endDate}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <AnalysisCandlestickChart
+                      data={candleData}
+                      loading={chartLoading}
+                      peaksTroughs={analysis?.peaks_troughs || []}
+                      height={300}
+                      visibleStartDate={startDate}
+                      visibleEndDate={endDate}
+                    />
+                    <div className="mt-2 text-xs text-center text-[#7A6A5C]">
+                      Seçili Aralık: {startDate} → {endDate}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Similar Stock Chart */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl font-['Playfair_Display'] text-[#2E2620]">
+                          {compareStock.symbol}
+                          <Badge className="ml-2 bg-[#C86F4A]/10 text-[#C86F4A] border-[#C86F4A]/30">
+                            Benzer
+                          </Badge>
+                        </CardTitle>
+                        <CardDescription className="text-[#7A6A5C]">
+                          {compareStock.start_date || 'Güncel veri'} - {compareStock.end_date || ''}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <AnalysisCandlestickChart
+                      data={compareCandleData}
+                      loading={compareLoading}
+                      peaksTroughs={compareStock.peaks_troughs || []}
+                      height={300}
+                      visibleStartDate={compareStock.start_date}
+                      visibleEndDate={compareStock.end_date}
+                      showScrollHint={true}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Peak/Trough Comparison */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {/* Reference Peaks/Troughs */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-[#2E2620]">
+                      {symbol} Dip/Tepe Noktaları
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {analysis?.peaks_troughs?.slice(0, 6).map((pt, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm p-2 bg-[#F6F1EA] rounded">
+                          <span className="flex items-center gap-2">
+                            {pt.point_type === 'tepe' ? (
+                              <TrendingUp className="w-4 h-4 text-[#6D7C3B]" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4 text-[#B04832]" />
+                            )}
+                            {pt.point_number}. {pt.point_type === 'tepe' ? 'Tepe' : 'Dip'}
+                          </span>
+                          <span className="text-[#7A6A5C]">{pt.date}</span>
+                          <span className="font-medium">₺{pt.price?.toLocaleString('tr-TR')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Similar Stock Peaks/Troughs */}
+                <Card className="card-organic">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-[#2E2620]">
+                      {compareStock.symbol} Dip/Tepe Noktaları
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {compareStock.peaks_troughs?.slice(0, 6).map((pt, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm p-2 bg-[#F6F1EA] rounded">
+                          <span className="flex items-center gap-2">
+                            {pt.point_type === 'tepe' ? (
+                              <TrendingUp className="w-4 h-4 text-[#6D7C3B]" />
+                            ) : (
+                              <TrendingDown className="w-4 h-4 text-[#B04832]" />
+                            )}
+                            {pt.point_number}. {pt.point_type === 'tepe' ? 'Tepe' : 'Dip'}
+                          </span>
+                          <span className="text-[#7A6A5C]">{pt.date}</span>
+                          <span className="font-medium">₺{pt.price?.toLocaleString('tr-TR')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

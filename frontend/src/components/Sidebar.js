@@ -13,25 +13,24 @@ import {
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { useState } from 'react';
-
+ 
 const Sidebar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAdmin = user?.role === 'admin' || user?.email === 'emrekirbayir@gmail.com';
-
+ 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/dashboard', label: 'Ana Sayfa', icon: LayoutDashboard },
     { path: '/analysis', label: 'Benzerlik Analizi', icon: Search },
-    { path: '/draw-pattern', label: 'Özel Kalıp', icon: Settings },
+    { path: '/draw-pattern', label: 'Kalıp Çizimi', icon: Settings },
     { path: '/saved', label: 'Kayıtlı Analizler', icon: Bookmark },
   ];
-
+ 
   const isActive = (path) => location.pathname === path;
-
+ 
   const NavContent = () => (
     <>
-      {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-6 border-b border-[#E6DCCF]">
         <div className="w-10 h-10 rounded-full bg-[#C86F4A] flex items-center justify-center">
           <TrendingUp className="w-5 h-5 text-white" />
@@ -40,8 +39,7 @@ const Sidebar = () => {
           BIST Analiz
         </span>
       </div>
-
-      {/* Navigation */}
+ 
       <nav className="flex-1 flex flex-col py-6 px-3 space-y-1">
         {navItems.map((item) => (
           <Link
@@ -55,8 +53,7 @@ const Sidebar = () => {
             <span>{item.label}</span>
           </Link>
         ))}
-
-        {/* Admin-only link pinned to bottom */}
+ 
         {isAdmin && (
           <div className="mt-auto pt-4">
             <Link
@@ -71,8 +68,7 @@ const Sidebar = () => {
           </div>
         )}
       </nav>
-
-      {/* User Section */}
+ 
       <div className="border-t border-[#E6DCCF] p-4">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-[#E8D9C7] flex items-center justify-center">
@@ -89,6 +85,7 @@ const Sidebar = () => {
             </p>
           </div>
         </div>
+ 
         <Button
           variant="ghost"
           onClick={logout}
@@ -101,10 +98,9 @@ const Sidebar = () => {
       </div>
     </>
   );
-
+ 
   return (
     <>
-      {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-[#E6DCCF] px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -125,16 +121,14 @@ const Sidebar = () => {
           </Button>
         </div>
       </div>
-
-      {/* Mobile Sidebar Overlay */}
+ 
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 z-40 bg-black/50"
           onClick={() => setMobileOpen(false)}
         />
       )}
-
-      {/* Mobile Sidebar */}
+ 
       <aside
         className={`lg:hidden fixed top-0 left-0 z-50 h-full w-72 bg-white transform transition-transform duration-300 ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
@@ -144,13 +138,12 @@ const Sidebar = () => {
           <NavContent />
         </div>
       </aside>
-
-      {/* Desktop Sidebar */}
+ 
       <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 bg-white border-r border-[#E6DCCF]">
         <NavContent />
       </aside>
     </>
   );
 };
-
+ 
 export default Sidebar;

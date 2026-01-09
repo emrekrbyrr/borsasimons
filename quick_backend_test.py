@@ -8,7 +8,7 @@ import json
 from datetime import datetime
 
 def test_key_features():
-    base_url = "https://patternfinder-3.preview.emergentagent.com/api"
+    base_url = "https://patfinder-1.preview.emergentagent.com/api"
     
     # Test credentials
     test_email = f"test_{datetime.now().strftime('%H%M%S')}@test.com"

@@ -1,16 +1,21 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { useEffect, useRef } from 'react';
+import { createChart, CandlestickSeries, createSeriesMarkers } from 'lightweight-charts';
 import { Loader2 } from 'lucide-react';
 
 const AnalysisCandlestickChart = ({ 
   data, 
   loading, 
   peaksTroughs = [],
-  height = 400 
+  height = 400,
+  // New props for scrollable comparison
+  visibleStartDate = null,  // Initial visible start date (YYYY-MM-DD)
+  visibleEndDate = null,    // Initial visible end date (YYYY-MM-DD)
+  showScrollHint = false    // Show hint that user can scroll
 }) => {
   const chartContainerRef = useRef(null);
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
+  const markersApiRef = useRef(null);
 
   useEffect(() => {
     if (!chartContainerRef.current || chartRef.current) return;
@@ -86,6 +91,7 @@ const AnalysisCandlestickChart = ({
         chartRef.current.remove();
         chartRef.current = null;
         candleSeriesRef.current = null;
+        markersApiRef.current = null;
       }
     };
   }, [height]);
@@ -95,7 +101,7 @@ const AnalysisCandlestickChart = ({
     if (candleSeriesRef.current && data && data.length > 0) {
       candleSeriesRef.current.setData(data);
       
-      // Add markers for peaks and troughs
+      // Add markers for peaks and troughs using v5 API
       if (peaksTroughs && peaksTroughs.length > 0) {
         const markers = peaksTroughs.map(pt => {
           // Find the timestamp for this date
@@ -116,12 +122,41 @@ const AnalysisCandlestickChart = ({
           };
         }).filter(Boolean);
         
-        candleSeriesRef.current.setMarkers(markers);
+        // Use createSeriesMarkers API for v5
+        if (markersApiRef.current) {
+          markersApiRef.current.setMarkers(markers);
+        } else if (markers.length > 0) {
+          markersApiRef.current = createSeriesMarkers(candleSeriesRef.current, markers);
+        }
+      } else if (markersApiRef.current) {
+        markersApiRef.current.setMarkers([]);
       }
       
-      chartRef.current?.timeScale().fitContent();
+      // Set visible range if specified, otherwise fit all content
+      if (visibleStartDate && visibleEndDate && chartRef.current) {
+        // Find the timestamps for start and end dates
+        const startCandle = data.find(c => {
+          const candleDate = new Date(c.time * 1000).toISOString().split('T')[0];
+          return candleDate >= visibleStartDate;
+        });
+        const endCandle = [...data].reverse().find(c => {
+          const candleDate = new Date(c.time * 1000).toISOString().split('T')[0];
+          return candleDate <= visibleEndDate;
+        });
+        
+        if (startCandle && endCandle) {
+          chartRef.current.timeScale().setVisibleRange({
+            from: startCandle.time,
+            to: endCandle.time
+          });
+        } else {
+          chartRef.current.timeScale().fitContent();
+        }
+      } else {
+        chartRef.current?.timeScale().fitContent();
+      }
     }
-  }, [data, peaksTroughs]);
+  }, [data, peaksTroughs, visibleStartDate, visibleEndDate]);
 
   return (
     <div className="relative">
@@ -136,6 +171,13 @@ const AnalysisCandlestickChart = ({
           </div>
         )}
       </div>
+      
+      {/* Scroll Hint */}
+      {showScrollHint && (
+        <div className="flex items-center justify-center gap-2 mt-2 text-xs text-[#7A6A5C]">
+          <span>← Grafiği kaydırarak kalıptan sonrasını görebilirsiniz →</span>
+        </div>
+      )}
       
       {/* Legend */}
       <div className="flex items-center justify-center gap-6 mt-3">
