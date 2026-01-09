@@ -842,7 +842,12 @@ const AnalysisPage = () => {
                       loading={chartLoading}
                       peaksTroughs={analysis?.peaks_troughs || []}
                       height={300}
+                      visibleStartDate={startDate}
+                      visibleEndDate={endDate}
                     />
+                    <div className="mt-2 text-xs text-center text-[#7A6A5C]">
+                      Seçili Aralık: {startDate} → {endDate}
+                    </div>
                   </CardContent>
                 </Card>
 
