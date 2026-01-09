@@ -224,6 +224,19 @@ const DrawPatternPage = () => {
     toast.success(`${nextPointType === 'dip' ? 'Dip' : 'Tepe'} noktası eklendi`);
   }, [nextPointType]);
 
+  // Update refs when values change
+  useEffect(() => {
+    drawingModeRef.current = drawingMode;
+  }, [drawingMode]);
+
+  useEffect(() => {
+    candleDataRef.current = candleData;
+  }, [candleData]);
+
+  useEffect(() => {
+    handlePointSelectRef.current = handlePointSelect;
+  }, [handlePointSelect]);
+
   const handleUndo = () => {
     if (selectedPoints.length === 0) return;
     
