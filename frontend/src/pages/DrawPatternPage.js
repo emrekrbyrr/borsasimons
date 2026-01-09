@@ -374,6 +374,41 @@ const DrawPatternPage = () => {
     }
   };
 
+  // Open comparison modal
+  const openCompareModal = async (stock) => {
+    setCompareStock(stock);
+    setCompareModalOpen(true);
+    setCompareLoading(true);
+    setRefLoading(true);
+    
+    try {
+      // Fetch reference stock candlestick data (drawn pattern period)
+      const sortedPoints = [...selectedPoints].sort((a, b) => a.time - b.time);
+      const refStartDate = new Date(sortedPoints[0].time * 1000).toISOString().split('T')[0];
+      const refEndDate = new Date(sortedPoints[sortedPoints.length - 1].time * 1000).toISOString().split('T')[0];
+      
+      const refResponse = await axios.get(
+        `${API_URL}/stocks/${selectedSymbol}/candlestick?interval=1d&start_date=${refStartDate}&end_date=${refEndDate}`,
+        { headers: getAuthHeader() }
+      );
+      setRefCandleData(refResponse.data.candles || []);
+      setRefLoading(false);
+      
+      // Fetch comparison stock candlestick data (5 year history for scrolling)
+      const compareResponse = await axios.get(
+        `${API_URL}/stocks/${stock.symbol}/candlestick?interval=1d&period=5y`,
+        { headers: getAuthHeader() }
+      );
+      setCompareCandleData(compareResponse.data.candles || []);
+    } catch (error) {
+      console.error('Compare candlestick error:', error);
+      toast.error('Karşılaştırma verisi yüklenemedi');
+    } finally {
+      setCompareLoading(false);
+      setRefLoading(false);
+    }
+  };
+
   const ratios = calculateRatios();
 
   return (
