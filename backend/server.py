@@ -1101,6 +1101,161 @@ async def find_advanced_pattern(request: AdvancedPatternRequest, current_user: d
     
     return results[:request.limit]
 
+
+@api_router.post("/stocks/search-by-pattern", response_model=List[SimilarStockResult])
+async def search_by_drawn_pattern(request: SearchByPatternRequest, current_user: dict = Depends(get_current_user)):
+    """
+    Search for similar patterns based on user-drawn points on chart.
+    Uses the drawn pattern's price movements to find similar patterns in stock history.
+    """
+    if len(request.points) < 2:
+        raise HTTPException(status_code=400, detail="En az 2 nokta gerekli")
+    
+    # Extract price series from drawn points
+    drawn_prices = np.array([p.price for p in request.points])
+    
+    # Calculate ratios between consecutive points
+    drawn_ratios = []
+    for i in range(len(drawn_prices) - 1):
+        ratio = (drawn_prices[i + 1] - drawn_prices[i]) / drawn_prices[i] * 100
+        drawn_ratios.append(ratio)
+    
+    logger.info(f"Searching patterns similar to drawn pattern with {len(request.points)} points")
+    logger.info(f"Drawn ratios: {drawn_ratios}")
+    
+    results = []
+    pattern_length = len(request.points)
+    
+    # Search history period
+    from datetime import datetime, timedelta
+    history_end = datetime.now().strftime('%Y-%m-%d')
+    history_start = (datetime.now() - timedelta(days=7*365)).strftime('%Y-%m-%d')
+    
+    stocks_to_check = sorted(BIST_100_SYMBOLS)[:200]
+    
+    for symbol in stocks_to_check:
+        if symbol == request.symbol:
+            continue
+        
+        try:
+            df = get_stock_data(symbol, history_start, history_end)
+            if df.empty or len(df) < pattern_length * 5:
+                continue
+            
+            all_prices = df['Close'].values
+            all_dates = df['Date'].tolist()
+            
+            # Find peaks and troughs in this stock's history
+            peaks_troughs = find_peaks_troughs(all_prices, all_dates)
+            
+            if len(peaks_troughs) < len(request.points):
+                continue
+            
+            # Sliding window through peaks/troughs
+            best_match = None
+            best_similarity = 0
+            
+            for start_idx in range(len(peaks_troughs) - pattern_length + 1):
+                window_pts = peaks_troughs[start_idx:start_idx + pattern_length]
+                window_prices = [pt.price for pt in window_pts]
+                
+                # Calculate ratios for this window
+                window_ratios = []
+                for i in range(len(window_prices) - 1):
+                    ratio = (window_prices[i + 1] - window_prices[i]) / window_prices[i] * 100
+                    window_ratios.append(ratio)
+                
+                # Compare ratios
+                if len(window_ratios) != len(drawn_ratios):
+                    continue
+                
+                # Calculate similarity based on ratio differences
+                total_diff = 0
+                for dr, wr in zip(drawn_ratios, window_ratios):
+                    # Both should have same direction (positive/negative)
+                    if (dr > 0) != (wr > 0):
+                        total_diff += 100  # Penalty for wrong direction
+                    else:
+                        total_diff += abs(dr - wr)
+                
+                avg_diff = total_diff / len(drawn_ratios)
+                similarity = max(0, 100 - avg_diff) / 100
+                
+                if similarity > best_similarity:
+                    best_similarity = similarity
+                    
+                    # Get date range and calculate after-pattern performance
+                    window_start_date = window_pts[0].date
+                    window_end_date = window_pts[-1].date
+                    
+                    # Find end index in all_dates
+                    end_idx = None
+                    for idx, d in enumerate(all_dates):
+                        if d == window_end_date:
+                            end_idx = idx
+                            break
+                    
+                    after_1m_change = None
+                    after_3m_change = None
+                    pattern_end_price = window_prices[-1]
+                    
+                    if end_idx is not None:
+                        # 1 month after (~22 trading days)
+                        after_1m_idx = end_idx + 22
+                        if after_1m_idx < len(all_prices):
+                            after_1m_price = all_prices[after_1m_idx]
+                            after_1m_change = round((after_1m_price - pattern_end_price) / pattern_end_price * 100, 2)
+                        
+                        # 3 months after (~66 trading days)
+                        after_3m_idx = end_idx + 66
+                        if after_3m_idx < len(all_prices):
+                            after_3m_price = all_prices[after_3m_idx]
+                            after_3m_change = round((after_3m_price - pattern_end_price) / pattern_end_price * 100, 2)
+                    
+                    best_match = {
+                        'start_date': window_start_date,
+                        'end_date': window_end_date,
+                        'peaks_troughs': window_pts,
+                        'after_1m_change': after_1m_change,
+                        'after_3m_change': after_3m_change,
+                        'pattern_end_price': round(pattern_end_price, 2)
+                    }
+            
+            if best_match and best_similarity >= request.min_similarity:
+                # Calculate correlation
+                try:
+                    drawn_norm = normalize_prices(drawn_prices)
+                    match_prices = np.array([pt.price for pt in best_match['peaks_troughs']])
+                    match_norm = normalize_prices(match_prices)
+                    correlation, _ = pearsonr(drawn_norm, match_norm)
+                    if np.isnan(correlation):
+                        correlation = 0.0
+                except:
+                    correlation = 0.0
+                
+                results.append(SimilarStockResult(
+                    symbol=symbol,
+                    similarity_score=round(best_similarity * 100, 2),
+                    correlation=round(correlation * 100, 2),
+                    start_date=best_match['start_date'],
+                    end_date=best_match['end_date'],
+                    peaks_troughs=best_match['peaks_troughs'],
+                    current_price=round(all_prices[-1], 2),
+                    price_change_percent=round((match_prices[-1] - match_prices[0]) / match_prices[0] * 100, 2),
+                    after_pattern_1m=best_match['after_1m_change'],
+                    after_pattern_3m=best_match['after_3m_change'],
+                    pattern_end_price=best_match['pattern_end_price']
+                ))
+        except Exception as e:
+            logger.warning(f"Error processing {symbol}: {e}")
+            continue
+    
+    results.sort(key=lambda x: x.similarity_score, reverse=True)
+    logger.info(f"Found {len(results)} similar drawn patterns")
+    
+    return results[:request.limit]
+
+
 @api_router.get("/stocks/{symbol}/quick")
 async def get_stock_quick(symbol: str, current_user: dict = Depends(get_current_user)):
     """Get quick stock info"""
