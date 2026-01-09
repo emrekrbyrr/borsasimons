@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#C86F4A"/>
+      <stop offset="1" stop-color="#B04832"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="10" width="52" height="44" rx="10" fill="#F6F1EA" stroke="#E6DCCF" stroke-width="2"/>
+  <!-- Simple candlesticks -->
+  <g stroke="#2E2620" stroke-width="2" stroke-linecap="round">
+    <line x1="18" y1="18" x2="18" y2="44"/>
+    <rect x="15" y="24" width="6" height="10" fill="url(#g)" stroke="#2E2620"/>
+
+    <line x1="30" y1="20" x2="30" y2="46"/>
+    <rect x="27" y="28" width="6" height="12" fill="#6D7C3B" stroke="#2E2620"/>
+
+    <line x1="42" y1="22" x2="42" y2="44"/>
+    <rect x="39" y="26" width="6" height="8" fill="url(#g)" stroke="#2E2620"/>
+  </g>
+  <!-- Trend line -->
+  <path d="M14 42 L24 36 L32 38 L44 28 L50 24" fill="none" stroke="#2E2620" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M50 24 L49 29 L55 25 Z" fill="#2E2620"/>
+</svg>

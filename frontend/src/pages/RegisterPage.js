@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { TrendingUp, Mail, Lock, User, ArrowRight } from 'lucide-react';
 
 const RegisterPage = () => {
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,7 +33,15 @@ const RegisterPage = () => {
     setLoading(true);
     
     try {
-      await register(email, password, fullName);
+      const result = await register(email, password, fullName);
+      
+      // Non-admin users require admin approval before login
+      if (result?.requires_approval) {
+        toast.success(result?.message || 'Hesabınız oluşturuldu. Admin onayı bekleniyor.');
+        navigate('/login', { replace: true });
+        return;
+      }
+      
       toast.success('Kayıt başarılı!');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Kayıt başarısız');

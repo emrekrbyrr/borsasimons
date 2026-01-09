@@ -41,6 +41,14 @@ SECRET_KEY = os.environ.get("JWT_SECRET", "bist-analiz-secret-key-2024")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
+# Admin configuration
+# Comma-separated emails, e.g. "a@x.com,b@y.com"
+ADMIN_EMAILS = {
+    e.strip().lower()
+    for e in os.environ.get("ADMIN_EMAILS", "emrekirbayir@gmail.com").split(",")
+    if e.strip()
+}
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -111,11 +119,20 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     created_at: str
+    role: str = "user"
+    approved: bool = True
 
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+class RegisterResponse(BaseModel):
+    requires_approval: bool
+    message: str
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    user: Optional[UserResponse] = None
 
 class StockAnalysisRequest(BaseModel):
     symbol: str
@@ -241,6 +258,25 @@ def verify_password(plain_password, hashed_password):
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+def is_admin_email(email: str) -> bool:
+    return (email or "").strip().lower() in ADMIN_EMAILS
+
+def normalize_user_doc(user: dict) -> dict:
+    """
+    Backward-compatible normalization for users created before approval/role fields existed.
+    """
+    if user is None:
+        return user
+    # Default approved for old users (so we don't lock out existing accounts)
+    user.setdefault("approved", True)
+    # Default role based on admin email list
+    if "role" not in user or not user.get("role"):
+        user["role"] = "admin" if is_admin_email(user.get("email", "")) else "user"
+    # Admin should always be treated as approved
+    if user.get("role") == "admin":
+        user["approved"] = True
+    return user
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
@@ -250,11 +286,19 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         user = await db.users.find_one({"id": user_id}, {"_id": 0})
         if user is None:
             raise HTTPException(status_code=401, detail="User not found")
+        user = normalize_user_doc(user)
+        if not user.get("approved", True):
+            raise HTTPException(status_code=403, detail="Account pending admin approval")
         return user
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
+def require_admin(current_user: dict = Depends(get_current_user)):
+    if not is_admin_email(current_user.get("email", "")) and current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
 
 def get_stock_data(symbol: str, start_date: str, end_date: str) -> pd.DataFrame:
     """Fetch stock data from Yahoo Finance"""
@@ -677,7 +721,7 @@ def find_peaks_troughs_with_criteria(prices: np.ndarray, dates: List[str], crite
     return points
 
 # Auth Routes
-@api_router.post("/auth/register", response_model=TokenResponse)
+@api_router.post("/auth/register", response_model=RegisterResponse)
 async def register(user_data: UserCreate):
     # Check if user exists
     existing = await db.users.find_one({"email": user_data.email})
@@ -686,26 +730,40 @@ async def register(user_data: UserCreate):
     
     # Create user
     user_id = str(uuid.uuid4())
+    admin_user = is_admin_email(user_data.email)
     user_doc = {
         "id": user_id,
         "email": user_data.email,
         "full_name": user_data.full_name,
         "password_hash": get_password_hash(user_data.password),
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "role": "admin" if admin_user else "user",
+        "approved": True if admin_user else False,
+        "approved_at": datetime.now(timezone.utc).isoformat() if admin_user else None,
     }
     await db.users.insert_one(user_doc)
-    
-    # Create token
+
+    # Non-admin users require approval before they can log in.
+    if not user_doc["approved"]:
+        return RegisterResponse(
+            requires_approval=True,
+            message="Hesabınız oluşturuldu. Admin onayı bekleniyor."
+        )
+
+    # Admin user (or future auto-approved users): issue token
     access_token = create_access_token({"sub": user_id})
-    
-    return TokenResponse(
+    return RegisterResponse(
+        requires_approval=False,
+        message="Kayıt başarılı!",
         access_token=access_token,
         token_type="bearer",
         user=UserResponse(
             id=user_id,
             email=user_data.email,
             full_name=user_data.full_name,
-            created_at=user_doc["created_at"]
+            created_at=user_doc["created_at"],
+            role=user_doc["role"],
+            approved=user_doc["approved"],
         )
     )
 
@@ -714,6 +772,10 @@ async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
     if not user or not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    user = normalize_user_doc(user)
+    if not user.get("approved", True):
+        raise HTTPException(status_code=403, detail="Account pending admin approval")
     
     access_token = create_access_token({"sub": user["id"]})
     
@@ -724,7 +786,9 @@ async def login(credentials: UserLogin):
             id=user["id"],
             email=user["email"],
             full_name=user["full_name"],
-            created_at=user["created_at"]
+            created_at=user["created_at"],
+            role=user.get("role", "user"),
+            approved=user.get("approved", True),
         )
     )
 
@@ -734,8 +798,43 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         id=current_user["id"],
         email=current_user["email"],
         full_name=current_user["full_name"],
-        created_at=current_user["created_at"]
+        created_at=current_user["created_at"],
+        role=current_user.get("role", "user"),
+        approved=current_user.get("approved", True),
     )
+
+# Admin Routes
+@api_router.get("/admin/pending-users", response_model=List[UserResponse])
+async def list_pending_users(current_user: dict = Depends(require_admin)):
+    users = await db.users.find(
+        {"approved": False},
+        {"_id": 0, "password_hash": 0}
+    ).sort("created_at", 1).to_list(200)
+    users = [normalize_user_doc(u) for u in users]
+    # keep only pending
+    pending = [u for u in users if not u.get("approved", True)]
+    return [
+        UserResponse(
+            id=u["id"],
+            email=u["email"],
+            full_name=u.get("full_name", ""),
+            created_at=u.get("created_at", ""),
+            role=u.get("role", "user"),
+            approved=u.get("approved", False),
+        )
+        for u in pending
+    ]
+
+@api_router.post("/admin/pending-users/{user_id}/approve")
+async def approve_user(user_id: str, current_user: dict = Depends(require_admin)):
+    now = datetime.now(timezone.utc).isoformat()
+    result = await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"approved": True, "approved_at": now}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "approved", "user_id": user_id, "approved_at": now}
 
 # Stock Routes
 @api_router.get("/stocks/symbols")
