@@ -83,9 +83,7 @@ const CustomPatternPage = () => {
 
   const fetchSymbols = async () => {
     try {
-      const response = await axios.get(`${API_URL}/stocks/symbols`, {
-        headers: getAuthHeader()
-      });
+      const response = await axios.get(`${API_URL}/stocks/symbols`);
       setSymbols(response.data.symbols || []);
     } catch (error) {
       toast.error('Semboller yüklenemedi');
