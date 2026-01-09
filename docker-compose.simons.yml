@@ -1,0 +1,65 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: simons-mongo
+    command: ["mongod", "--bind_ip_all", "--wiredTigerCacheSizeGB", "0.25"]
+    volumes:
+      - simons_mongo_data:/data/db
+    networks:
+      - simons
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 512M
+
+  backend:
+    build:
+      context: ./backend
+    container_name: simons-backend
+    environment:
+      # Mongo
+      MONGO_URL: mongodb://mongo:27017
+      DB_NAME: simons
+
+      # Auth
+      JWT_SECRET: change-me-in-production
+
+      # CORS (comma-separated)
+      CORS_ORIGINS: https://simons.com.tr,https://www.simons.com.tr
+    depends_on:
+      - mongo
+    networks:
+      - simons
+    ports:
+      - "127.0.0.1:8010:8000"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 1024M
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: simons-frontend
+    networks:
+      - simons
+    ports:
+      - "127.0.0.1:8090:80"
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+networks:
+  simons:
+    name: simons
+    driver: bridge
+
+volumes:
+  simons_mongo_data:
