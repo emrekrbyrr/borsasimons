@@ -50,6 +50,20 @@ BIST 100 hisselerinde benzer fiyat kalıplarını analiz eden web platformu. Kul
   - Kalıp sonu fiyatı
 - Kullanıcı artık benzer kalıp yapan hisselerin "geleceğini" tahmin edebilir
 
+### İterasyon 5 - Grafik Üzerinde Kalıp Çizimi (09 Ocak 2026)
+- **Yeni Sayfa: /draw-pattern** - Grafik üzerinde çizim yaparak kalıp belirleme
+- **Çizim Modu:** Kullanıcı grafikte tıklayarak dip/tepe noktaları işaretleyebiliyor
+- **Otomatik Oran Hesaplama:** Noktalar arasındaki yüzde değişimler otomatik hesaplanıyor
+- **Turuncu Çizgi:** Seçilen noktalar arasında görsel bağlantı
+- **Geri Al / Temizle:** Son noktayı silme veya tüm noktaları temizleme
+- **Benzer Kalıp Arama:** Çizilen kalıba benzer hisseleri bulma
+
+### İterasyon 5.1 - Karşılaştırma Modal Kaydırılabilir Grafik
+- **Kaydırılabilir Grafik:** Benzer hisse grafiği artık kalıptan sonrasını görmek için kaydırılabilir
+- **İlk Görünüm:** Grafik açıldığında kalıp tarihleri görünüyor
+- **Kaydırma İpucu:** "← Grafiği kaydırarak kalıptan sonrasını görebilirsiniz →"
+- **Referans Göstergesi:** Referans hisse grafiğinde "Seçili Aralık" bilgisi
+
 ## Tech Stack
 - Backend: FastAPI, MongoDB, yfinance, scipy, scikit-learn
 - Frontend: React, Tailwind CSS, lightweight-charts v5.1.0, Shadcn/UI
