@@ -193,9 +193,11 @@ const DrawPatternPage = () => {
   useEffect(() => {
     if (!lineSeriesRef.current || !candleSeriesRef.current) return;
 
-    // Update line series
+    // Update line series - MUST be sorted by time ascending
     if (selectedPoints.length > 0) {
-      const lineData = selectedPoints.map(p => ({ time: p.time, value: p.price }));
+      const lineData = selectedPoints
+        .map(p => ({ time: p.time, value: p.price }))
+        .sort((a, b) => a.time - b.time);  // Sort by time ascending
       lineSeriesRef.current.setData(lineData);
     } else {
       lineSeriesRef.current.setData([]);
