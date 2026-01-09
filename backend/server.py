@@ -838,8 +838,8 @@ async def approve_user(user_id: str, current_user: dict = Depends(require_admin)
 
 # Stock Routes
 @api_router.get("/stocks/symbols")
-async def get_symbols(current_user: dict = Depends(get_current_user)):
-    """Get list of BIST symbols - alfabetik sıralı"""
+async def get_symbols():
+    """Get list of BIST symbols - alfabetik sıralı (public)"""
     sorted_symbols = sorted(BIST_100_SYMBOLS)
     return {"symbols": sorted_symbols}
 
