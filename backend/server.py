@@ -215,6 +215,18 @@ class PartialMatchRequest(BaseModel):
     pattern_start_percent: float = 30  # İlk yüzde kaçını karşılaştır
     limit: int = 15
 
+class PatternPoint(BaseModel):
+    time: int
+    price: float
+    type: str  # 'dip' or 'tepe'
+
+class SearchByPatternRequest(BaseModel):
+    symbol: str
+    points: List[PatternPoint]
+    criteria: Optional[dict] = None
+    min_similarity: float = 0.6
+    limit: int = 20
+
 # Helper Functions
 def create_access_token(data: dict):
     to_encode = data.copy()
