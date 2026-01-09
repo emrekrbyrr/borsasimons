@@ -261,14 +261,17 @@ const DrawPatternPage = () => {
   const calculateRatios = () => {
     if (selectedPoints.length < 2) return [];
     
+    // Sort points by time for correct ratio calculation
+    const sortedPoints = [...selectedPoints].sort((a, b) => a.time - b.time);
+    
     const ratios = [];
-    for (let i = 0; i < selectedPoints.length - 1; i++) {
-      const p1 = selectedPoints[i];
-      const p2 = selectedPoints[i + 1];
+    for (let i = 0; i < sortedPoints.length - 1; i++) {
+      const p1 = sortedPoints[i];
+      const p2 = sortedPoints[i + 1];
       const change = ((p2.price - p1.price) / p1.price) * 100;
       ratios.push({
-        from: `${p1.index}. ${p1.type === 'dip' ? 'Dip' : 'Tepe'}`,
-        to: `${p2.index}. ${p2.type === 'dip' ? 'Dip' : 'Tepe'}`,
+        from: `${p1.type === 'dip' ? 'Dip' : 'Tepe'}`,
+        to: `${p2.type === 'dip' ? 'Dip' : 'Tepe'}`,
         change: change.toFixed(2),
         isRise: change > 0
       });
