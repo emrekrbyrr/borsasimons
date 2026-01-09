@@ -869,6 +869,9 @@ const AnalysisPage = () => {
                       loading={compareLoading}
                       peaksTroughs={compareStock.peaks_troughs || []}
                       height={300}
+                      visibleStartDate={compareStock.start_date}
+                      visibleEndDate={compareStock.end_date}
+                      showScrollHint={true}
                     />
                   </CardContent>
                 </Card>
